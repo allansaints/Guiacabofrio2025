@@ -576,6 +576,8 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+            /* Allows wrapping on smaller screens */
         }
 
         .add-input {
@@ -602,7 +604,8 @@
 
         /* ATUALIZADO: Estilo do item da lista para permitir edição */
         .shop-name-input {
-            flex: 1;
+            width: 100%;
+            /* Ensure it spans full width of flex parent */
             border: none;
             background: transparent;
             font-size: 0.95rem;
@@ -610,6 +613,8 @@
             color: var(--text-primary);
             padding: 5px;
             margin: 0 5px;
+            text-overflow: ellipsis;
+            /* Handle overflow */
         }
 
         .shop-name-input:focus {
@@ -623,15 +628,105 @@
             color: #aaa;
         }
 
+        /* Mobile Price Fix */
+        /* Mobile Price Fix */
+        .shop-price-container {
+            width: auto;
+            min-width: 80px;
+            max-width: 90px;
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 0 4px;
+            flex-shrink: 0;
+        }
+
+        .shop-price-input {
+            width: 100%;
+            min-width: 0;
+            border: none;
+            background: transparent;
+            text-align: right;
+            font-weight: 600;
+            font-size: 0.85rem;
+            outline: none;
+            padding: 8px 0;
+            color: #333;
+        }
+
+        /* Tag Select Style */
+        .shop-tag-select {
+            border: none;
+            border-radius: 4px;
+            padding: 2px 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            outline: none;
+            margin-right: 5px;
+            appearance: none;
+            /* Make it look like a badge */
+            text-align: center;
+        }
+
+        .tag-bh {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .tag-cf {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        /* Filter Styles */
+        .filter-container {
+            display: none;
+            /* Hidden by default */
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #eee;
+        }
+
+        .filter-container.show {
+            display: block;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .filter-btn {
+            background: white;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .filter-btn.active {
+            background: var(--blue);
+            color: white;
+            border-color: var(--blue);
+        }
+
+        /* NOVO: Botão de deletar estilo X */
         /* NOVO: Botão de deletar estilo X */
         .delete-btn {
             background: rgba(255, 59, 48, 0.1);
             color: var(--red);
             border: none;
             cursor: pointer;
-            font-size: 0.9rem;
-            width: 28px;
-            height: 28px;
+            font-size: 0.8rem;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -639,6 +734,69 @@
             margin-left: 8px;
             flex-shrink: 0;
             transition: 0.2s;
+            position: relative;
+            /* Avoid layout break */
+        }
+
+        /* Mobile Add Layout */
+        @media (max-width: 600px) {
+            .add-item-row {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .add-box-line {
+                display: flex;
+                gap: 8px;
+                width: 100%;
+            }
+        }
+
+        /* Desktop Add Layout: Ensure it stays in one line if space permits */
+        @media (min-width: 601px) {
+            .add-item-row {
+                flex-direction: row;
+                align-items: center;
+            }
+
+            .add-box-line {
+                display: contents;
+                /* Removes the wrapper effect on desktop to let flex parent handle it */
+            }
+
+            #new-item-input {
+                flex: 2;
+            }
+
+            #new-item-tag {
+                width: 80px;
+                flex: none;
+            }
+
+            #new-item-category {
+                width: 140px;
+                flex: none;
+            }
+
+            .add-btn {
+                width: 40px;
+                flex: none;
+            }
+        }
+
+        /* Quantity Field Style */
+        .shop-qty-input {
+            width: 50px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 6px;
+            padding: 5px;
+            margin-right: 8px;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--blue);
+            flex-shrink: 0;
         }
 
         .delete-btn:hover {
@@ -980,29 +1138,64 @@
                     </div>
                 </div>
 
+                <!-- FILTER TOGGLE -->
+                <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+                    <button class="filter-btn" onclick="toggleFilters()">🌪️ Filtros</button>
+                </div>
+                <!-- FILTERS -->
+                <div id="shopping-filters" class="filter-container">
+                    <div class="filter-row">
+                        <select id="filter-category" class="add-input" onchange="renderShoppingList()"
+                            style="padding:8px;">
+                            <option value="All">Todas Categorias</option>
+                            <option value="Açougue">Açougue</option>
+                            <option value="Bebidas">Bebidas</option>
+                            <option value="Frios/Laticínios">Frios/Laticínios</option>
+                            <option value="Hortifruti">Hortifruti</option>
+                            <option value="Padaria/Café">Padaria/Café</option>
+                            <option value="Mercearia/Diversos">Mercearia</option>
+                            <option value="Higiene/Limpeza">Higiene</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                    <div class="filter-row">
+                        <select id="filter-tag" class="add-input" onchange="renderShoppingList()" style="padding:8px;">
+                            <option value="All">Todos Locais</option>
+                            <option value="BH">BH</option>
+                            <option value="Cabo Frio">Cabo Frio</option>
+                        </select>
+                    </div>
+                </div>
+
                 <!-- ADICIONE ISSO AQUI: Campo para adicionar novos itens -->
                 <!-- ADICIONE ISSO AQUI: Campo para adicionar novos itens -->
-                <div class="add-item-row" style="flex-wrap: wrap;">
-                    <input type="text" id="new-item-input" class="add-input" placeholder="Novo item..."
-                        style="flex: 2; min-width: 150px;">
+                <div class="add-item-row">
+                    <!-- Linha 1: Nome e Onde Comprar (BH/CF) -->
+                    <div class="add-box-line">
+                        <input type="text" id="new-item-input" class="add-input" placeholder="Novo item..."
+                            style="flex: 2;">
+                        <input type="text" id="new-item-qty" class="add-input" placeholder="Qtd"
+                            style="flex: 0.5; min-width: 50px;">
+                    </div>
 
-                    <select id="new-item-category" class="add-input" style="flex: 1; min-width: 120px;">
-                        <option value="Mercearia/Diversos">Mercearia</option>
-                        <option value="Açougue">Açougue</option>
-                        <option value="Bebidas">Bebidas</option>
-                        <option value="Frios/Laticínios">Frios</option>
-                        <option value="Hortifruti">Hortifruti</option>
-                        <option value="Padaria/Café">Padaria</option>
-                        <option value="Higiene/Limpeza">Higiene</option>
-                        <option value="Outros">Outros</option>
-                    </select>
-
-                    <select id="new-item-tag" class="add-input" style="flex: 0.8; min-width: 100px;">
-                        <option value="Cabo Frio">CF</option>
-                        <option value="BH">BH</option>
-                    </select>
-
-                    <button class="add-btn" onclick="addNewItem()">+</button>
+                    <!-- Linha 2: Categoria e Botão -->
+                    <div class="add-box-line">
+                        <select id="new-item-tag" class="add-input" style="flex: 0.8; min-width: 70px;">
+                            <option value="Cabo Frio">CF</option>
+                            <option value="BH">BH</option>
+                        </select>
+                        <select id="new-item-category" class="add-input" style="flex: 1.5;">
+                            <option value="Mercearia/Diversos">Mercearia</option>
+                            <option value="Açougue">Açougue</option>
+                            <option value="Bebidas">Bebidas</option>
+                            <option value="Frios/Laticínios">Frios</option>
+                            <option value="Hortifruti">Hortifruti</option>
+                            <option value="Padaria/Café">Padaria</option>
+                            <option value="Higiene/Limpeza">Higiene</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                        <button class="add-btn" onclick="addNewItem()">+</button>
+                    </div>
                 </div>
 
                 <div id="shopping-list-container"></div>
@@ -1318,72 +1511,73 @@
         // Itens Iniciais de Compra
         // Categorias: "Açougue", "Padaria/Café", "Bebidas", "Higiene/Limpeza", "Frios/Laticínios", "Hortifruti", "Mercearia/Diversos"
         // Tags: "BH", "Cabo Frio"
+        // Itens Iniciais de Compra
         const initialShoppingItems = [
             // AÇOUGUE
-            { id: 19, name: "Alcatra ou Contra-filé (Bifes) (800 g)", price: 45.0, checked: false, category: "Açougue", tag: "Cabo Frio" },
-            { id: 20, name: "Picanha ou Alcatra (Peça) (1.5 kg)", price: 100.0, checked: false, category: "Açougue", tag: "Cabo Frio" },
-            { id: 21, name: "Linguiça Toscana (1.0 kg)", price: 25.0, checked: false, category: "Açougue", tag: "Cabo Frio" },
-            { id: 22, name: "Coxinha da Asa (Temp.) (1.0 kg)", price: 20.0, checked: false, category: "Açougue", tag: "Cabo Frio" },
-            { id: 23, name: "Peito de Frango (Cubos) (1.5 kg)", price: 30.0, checked: false, category: "Açougue", tag: "Cabo Frio" },
-            { id: 24, name: "Carne Moída (Patinho) (2.2 kg)", price: 85.0, checked: false, category: "Açougue", tag: "Cabo Frio" },
-            { id: 25, name: "Bacon Fatiado (400 g)", price: 35.0, checked: false, category: "Açougue", tag: "Cabo Frio" },
+            { id: 19, name: "Alcatra ou Contra-filé (Bifes)", qty: "800g", price: 45.0, checked: false, category: "Açougue", tag: "Cabo Frio" },
+            { id: 20, name: "Picanha ou Alcatra (Peça)", qty: "1.5kg", price: 100.0, checked: false, category: "Açougue", tag: "Cabo Frio" },
+            { id: 21, name: "Linguiça Toscana", qty: "1.0kg", price: 25.0, checked: false, category: "Açougue", tag: "Cabo Frio" },
+            { id: 22, name: "Coxinha da Asa (Temp.)", qty: "1.0kg", price: 20.0, checked: false, category: "Açougue", tag: "Cabo Frio" },
+            { id: 23, name: "Peito de Frango (Cubos)", qty: "1.5kg", price: 30.0, checked: false, category: "Açougue", tag: "Cabo Frio" },
+            { id: 24, name: "Carne Moída (Patinho)", qty: "2.2kg", price: 85.0, checked: false, category: "Açougue", tag: "Cabo Frio" },
+            { id: 25, name: "Bacon Fatiado", qty: "400g", price: 35.0, checked: false, category: "Açougue", tag: "Cabo Frio" },
 
             // FRIOS / LATICÍNIOS
-            { id: 1, name: "Creme de Leite ZERO LACTOSE (6 cx)", price: 30.0, checked: false, category: "Frios/Laticínios", tag: "BH" },
-            { id: 2, name: "Leite Condensado ZERO LACTOSE (4 cx)", price: 32.0, checked: false, category: "Frios/Laticínios", tag: "BH" },
-            { id: 3, name: "Leite ZERO LACTOSE (3 lt)", price: 18.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
-            { id: 4, name: "Requeijão ZERO LACTOSE (1 pt)", price: 12.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
-            { id: 26, name: "Mussarela Fatiada (800 g)", price: 45.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
-            { id: 27, name: "Mussarela ZERO LACTOSE (200 g)", price: 18.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
-            { id: 28, name: "Presunto Fatiado (800 g)", price: 35.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
-            { id: 29, name: "Manteiga / Requeijão (1 pt)", price: 22.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
-            { id: 30, name: "Margarina Vegetal (1 pt)", price: 8.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
-            { id: 31, name: "Leite Integral (2 lt)", price: 10.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
-            { id: 32, name: "Ovos Brancos (40 un)", price: 36.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
+            { id: 1, name: "Creme de Leite ZERO LACTOSE", qty: "6 cx", price: 30.0, checked: false, category: "Frios/Laticínios", tag: "BH" },
+            { id: 2, name: "Leite Condensado ZERO LACTOSE", qty: "4 cx", price: 32.0, checked: false, category: "Frios/Laticínios", tag: "BH" },
+            { id: 3, name: "Leite ZERO LACTOSE", qty: "3 lt", price: 18.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
+            { id: 4, name: "Requeijão ZERO LACTOSE", qty: "1 pt", price: 12.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
+            { id: 26, name: "Mussarela Fatiada", qty: "800g", price: 45.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
+            { id: 27, name: "Mussarela ZERO LACTOSE", qty: "200g", price: 18.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
+            { id: 28, name: "Presunto Fatiado", qty: "800g", price: 35.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
+            { id: 29, name: "Manteiga / Requeijão", qty: "1 pt", price: 22.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
+            { id: 30, name: "Margarina Vegetal", qty: "1 pt", price: 8.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
+            { id: 31, name: "Leite Integral", qty: "2 lt", price: 10.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
+            { id: 32, name: "Ovos Brancos", qty: "40 un", price: 36.0, checked: false, category: "Frios/Laticínios", tag: "Cabo Frio" },
 
             // PADARIA / CAFÉ
-            { id: 40, name: "Pão de Hambúrguer (2 pct)", price: 18.0, checked: false, category: "Padaria/Café", tag: "Cabo Frio" },
-            { id: 41, name: "Pão de Forma (3 pct)", price: 25.0, checked: false, category: "Padaria/Café", tag: "Cabo Frio" },
-            { id: 42, name: "Pão Francês (5 un)", price: 5.0, checked: false, category: "Padaria/Café", tag: "Cabo Frio" },
-            { id: 33, name: "Pão de Alho (2 pct)", price: 25.0, checked: false, category: "Padaria/Café", tag: "Cabo Frio" },
-            { id: 6, name: "Café em Pó (250g) (1 pct)", price: 10.0, checked: false, category: "Padaria/Café", tag: "BH" },
-            { id: 7, name: "Filtro de Café 103 (1 pct)", price: 5.0, checked: false, category: "Padaria/Café", tag: "BH" },
-            { id: 5, name: "Açúcar (1 kg)", price: 5.0, checked: false, category: "Padaria/Café", tag: "BH" },
+            { id: 40, name: "Pão de Hambúrguer", qty: "2 pct", price: 18.0, checked: false, category: "Padaria/Café", tag: "Cabo Frio" },
+            { id: 41, name: "Pão de Forma", qty: "3 pct", price: 25.0, checked: false, category: "Padaria/Café", tag: "Cabo Frio" },
+            { id: 42, name: "Pão Francês", qty: "5 un", price: 5.0, checked: false, category: "Padaria/Café", tag: "Cabo Frio" },
+            { id: 33, name: "Pão de Alho", qty: "2 pct", price: 25.0, checked: false, category: "Padaria/Café", tag: "Cabo Frio" },
+            { id: 6, name: "Café em Pó (250g)", qty: "1 pct", price: 10.0, checked: false, category: "Padaria/Café", tag: "BH" },
+            { id: 7, name: "Filtro de Café 103", qty: "1 pct", price: 5.0, checked: false, category: "Padaria/Café", tag: "BH" },
+            { id: 5, name: "Açúcar", qty: "1 kg", price: 5.0, checked: false, category: "Padaria/Café", tag: "BH" },
 
             // HORTIFRUTI
-            { id: 34, name: "Cebola (1.5 kg)", price: 8.0, checked: false, category: "Hortifruti", tag: "Cabo Frio" },
-            { id: 35, name: "Alho (4 cb)", price: 5.0, checked: false, category: "Hortifruti", tag: "BH" },
-            { id: 36, name: "Tomate (8 un)", price: 10.0, checked: false, category: "Hortifruti", tag: "Cabo Frio" },
-            { id: 37, name: "Alface Americana (2 pé)", price: 10.0, checked: false, category: "Hortifruti", tag: "Cabo Frio" },
-            { id: 38, name: "Limão Taiti (1.5 kg)", price: 10.0, checked: false, category: "Hortifruti", tag: "Cabo Frio" },
-            { id: 39, name: "Frutas (Banana/Maçã) (1 kg)", price: 20.0, checked: false, category: "Hortifruti", tag: "Cabo Frio" },
+            { id: 34, name: "Cebola", qty: "1.5 kg", price: 8.0, checked: false, category: "Hortifruti", tag: "Cabo Frio" },
+            { id: 35, name: "Alho", qty: "4 cb", price: 5.0, checked: false, category: "Hortifruti", tag: "BH" },
+            { id: 36, name: "Tomate", qty: "8 un", price: 10.0, checked: false, category: "Hortifruti", tag: "Cabo Frio" },
+            { id: 37, name: "Alface Americana", qty: "2 pé", price: 10.0, checked: false, category: "Hortifruti", tag: "Cabo Frio" },
+            { id: 38, name: "Limão Taiti", qty: "1.5 kg", price: 10.0, checked: false, category: "Hortifruti", tag: "Cabo Frio" },
+            { id: 39, name: "Frutas (Banana/Maçã)", qty: "1 kg", price: 20.0, checked: false, category: "Hortifruti", tag: "Cabo Frio" },
 
             // BEBIDAS
-            { id: 44, name: "Água de Coco (Caixa) (3 lt)", price: 30.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
-            { id: 45, name: "Xeque Mate (12 lat)", price: 60.0, checked: false, category: "Bebidas", tag: "BH" },
-            { id: 46, name: "Mascate Drinques Melancia (8 lat)", price: 90.0, checked: true, category: "Bebidas", tag: "BH" },
-            { id: 47, name: "Ballena Morango (1 gf)", price: 0.0, checked: true, category: "Bebidas", tag: "BH" },
-            { id: 48, name: "Beats (Senses/GT) (6 lat)", price: 30.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
-            { id: 49, name: "Vodka (2 gf)", price: 80.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
-            { id: 50, name: "Sprite / Soda (2L) (3 gf)", price: 25.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
-            { id: 51, name: "Suco Integral (1.5L) (3 gf)", price: 35.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
-            { id: 52, name: "Refrigerante (2L) (3 gf)", price: 25.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
-            { id: 53, name: "Água Mineral (1.5L) (4 fd)", price: 60.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
-            { id: 54, name: "Gelo Cubo (5 sc)", price: 50.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
-            { id: 18, name: "Suco Conc. Maracujá (1 gf)", price: 12.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
+            { id: 44, name: "Água de Coco (Caixa)", qty: "3 lt", price: 30.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
+            { id: 45, name: "Xeque Mate", qty: "12 lat", price: 60.0, checked: false, category: "Bebidas", tag: "BH" },
+            { id: 46, name: "Mascate Drinques Melancia", qty: "8 lat", price: 90.0, checked: true, category: "Bebidas", tag: "BH" },
+            { id: 47, name: "Ballena Morango", qty: "1 gf", price: 0.0, checked: true, category: "Bebidas", tag: "BH" },
+            { id: 48, name: "Beats (Senses/GT)", qty: "6 lat", price: 30.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
+            { id: 49, name: "Vodka", qty: "2 gf", price: 80.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
+            { id: 50, name: "Sprite / Soda (2L)", qty: "3 gf", price: 25.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
+            { id: 51, name: "Suco Integral (1.5L)", qty: "3 gf", price: 35.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
+            { id: 52, name: "Refrigerante (2L)", qty: "3 gf", price: 25.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
+            { id: 53, name: "Água Mineral (1.5L)", qty: "4 fd", price: 60.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
+            { id: 54, name: "Gelo Cubo", qty: "5 sc", price: 50.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
+            { id: 18, name: "Suco Conc. Maracujá", qty: "1 gf", price: 12.0, checked: false, category: "Bebidas", tag: "Cabo Frio" },
 
             // MERCEARIA / DIVERSOS
-            { id: 8, name: "Massa de Lasanha (2 cx)", price: 16.0, checked: false, category: "Mercearia/Diversos", tag: "BH" },
-            { id: 9, name: "Azeite de Oliva (500ml) (1 gf)", price: 35.0, checked: false, category: "Mercearia/Diversos", tag: "BH" },
-            { id: 10, name: "Arroz Branco (2 kg)", price: 12.0, checked: false, category: "Mercearia/Diversos", tag: "BH" },
-            { id: 11, name: "Macarrão Penne (500g) (1 pct)", price: 6.0, checked: false, category: "Mercearia/Diversos", tag: "BH" },
-            { id: 12, name: "Molho Tomate Pelado (6 lat)", price: 42.0, checked: false, category: "Mercearia/Diversos", tag: "BH" },
-            { id: 13, name: "Batata Palha (Gde) (2 pct)", price: 16.0, checked: false, category: "Mercearia/Diversos", tag: "Cabo Frio" },
-            { id: 14, name: "Farofa Pronta (1 pct)", price: 8.0, checked: false, category: "Mercearia/Diversos", tag: "BH" },
-            { id: 15, name: "Ketchup / Mostarda / Maionese (1 un)", price: 30.0, checked: false, category: "Mercearia/Diversos", tag: "Cabo Frio" },
-            { id: 16, name: "Temperos Secos (1 kit)", price: 15.0, checked: false, category: "Mercearia/Diversos", tag: "BH" },
-            { id: 17, name: "Sal Grosso (1kg) (1 pct)", price: 5.0, checked: false, category: "Mercearia/Diversos", tag: "BH" },
-            { id: 43, name: "Carvão (5kg) (1 sc)", price: 25.0, checked: false, category: "Mercearia/Diversos", tag: "Cabo Frio" }
+            { id: 8, name: "Massa de Lasanha", qty: "2 cx", price: 16.0, checked: false, category: "Mercearia/Diversos", tag: "BH" },
+            { id: 9, name: "Azeite de Oliva (500ml)", qty: "1 gf", price: 35.0, checked: false, category: "Mercearia/Diversos", tag: "BH" },
+            { id: 10, name: "Arroz Branco", qty: "2 kg", price: 12.0, checked: false, category: "Mercearia/Diversos", tag: "BH" },
+            { id: 11, name: "Macarrão Penne (500g)", qty: "1 pct", price: 6.0, checked: false, category: "Mercearia/Diversos", tag: "BH" },
+            { id: 12, name: "Molho Tomate Pelado", qty: "6 lat", price: 42.0, checked: false, category: "Mercearia/Diversos", tag: "BH" },
+            { id: 13, name: "Batata Palha (Gde)", qty: "2 pct", price: 16.0, checked: false, category: "Mercearia/Diversos", tag: "Cabo Frio" },
+            { id: 14, name: "Farofa Pronta", qty: "1 pct", price: 8.0, checked: false, category: "Mercearia/Diversos", tag: "BH" },
+            { id: 15, name: "Ketchup / Mostarda / Maionese", qty: "1 un", price: 30.0, checked: false, category: "Mercearia/Diversos", tag: "Cabo Frio" },
+            { id: 16, name: "Temperos Secos", qty: "1 kit", price: 15.0, checked: false, category: "Mercearia/Diversos", tag: "BH" },
+            { id: 17, name: "Sal Grosso (1kg)", qty: "1 pct", price: 5.0, checked: false, category: "Mercearia/Diversos", tag: "BH" },
+            { id: 43, name: "Carvão (5kg)", qty: "1 sc", price: 25.0, checked: false, category: "Mercearia/Diversos", tag: "Cabo Frio" }
         ];
 
         // --- LÓGICA & FIREBASE ---
@@ -1569,17 +1763,27 @@
                 dbRef.on('value', (snapshot) => {
                     const data = snapshot.val();
                     if (data) {
-                        // Migration Logic: Restore categories if missing
+                        // Migration Logic: Restore categories if they are missing OR if they are 'Outros' but have a known category matches
                         localShoppingList = data.map(item => {
-                            if (!item.category || !item.tag) {
-                                const initial = initialShoppingItems.find(i => i.id === item.id || i.name === item.name);
-                                if (initial) {
-                                    if (!item.category) item.category = initial.category;
-                                    if (!item.tag) item.tag = initial.tag;
+                            // Find matching initial item
+                            const initial = initialShoppingItems.find(i => i.id === item.id || i.name === item.name);
+                            if (initial) {
+                                // If missing category or is 'Outros' but initial has a specific one
+                                if ((!item.category || item.category === 'Outros') && initial.category) {
+                                    item.category = initial.category;
+                                }
+                                // If missing tag
+                                if (!item.tag && initial.tag) {
+                                    item.tag = initial.tag;
+                                }
+                                // If missing qty
+                                if (!item.qty && initial.qty) {
+                                    item.qty = initial.qty;
                                 }
                             }
                             return item;
                         });
+
                         // Save back the migrated data
                         if (JSON.stringify(data) !== JSON.stringify(localShoppingList)) {
                             dbRef.set(localShoppingList);
@@ -1601,15 +1805,29 @@
             container.innerHTML = '';
             let total = 0;
 
+            // Get Filter Values
+            const filterCat = document.getElementById('filter-category') ? document.getElementById('filter-category').value : 'All';
+            const filterTag = document.getElementById('filter-tag') ? document.getElementById('filter-tag').value : 'All';
+
             // Garante que a lista existe
             if (!localShoppingList) localShoppingList = [];
 
+            // Apply Filters
+            let filteredList = localShoppingList.filter(item => {
+                if (filterCat !== 'All' && item.category !== filterCat) return false;
+                if (filterTag !== 'All' && item.tag !== filterTag) return false;
+                return true;
+            });
+
             // Agrupa por Categoria
             const itemsByCategory = {};
-            localShoppingList.forEach((item, index) => {
+            filteredList.forEach((item, index) => {
+                // IMPORTANT: We use index from localShoppingList for ID mapping, but here we are filtering, 
+                // so we need to find the REAL index in original list to pass to functions
+                const originalIndex = localShoppingList.indexOf(item);
                 const cat = item.category || 'Outros';
                 if (!itemsByCategory[cat]) itemsByCategory[cat] = [];
-                itemsByCategory[cat].push({ ...item, originalIndex: index });
+                itemsByCategory[cat].push({ ...item, originalIndex: originalIndex });
             });
 
             // Ordem das categorias (opcional)
@@ -1632,15 +1850,24 @@
                         const div = document.createElement('div');
                         div.className = `shop-item ${item.checked ? 'checked' : ''}`;
 
-                        // Tag HTML
-                        let tagHtml = '';
-                        if (item.tag === 'BH') tagHtml = '<span class="shop-tag tag-bh">BH</span>';
-                        else if (item.tag === 'Cabo Frio') tagHtml = '<span class="shop-tag tag-cf">CF</span>';
+                        // Tag Select
+                        const isBH = item.tag === 'BH';
+                        const tagClass = isBH ? 'tag-bh' : 'tag-cf';
+                        // Dropdown for tag
+                        const tagHtml = `
+                            <select class="shop-tag-select ${tagClass}" onchange="updateTag(${index}, this.value)">
+                                <option value="BH" ${item.tag === 'BH' ? 'selected' : ''}>BH</option>
+                                <option value="Cabo Frio" ${item.tag === 'Cabo Frio' ? 'selected' : ''}>CF</option>
+                            </select>
+                        `;
 
                         div.innerHTML = `
                             <div class="shop-check" onclick="toggleCheck(${index})">${item.checked ? '✔' : ''}</div>
                             
-                            <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+                            <!-- QUANTIDADE -->
+                            <input type="text" class="shop-qty-input" value="${item.qty || ''}" placeholder="-" onchange="updateQty(${index}, this.value)">
+
+                            <div style="flex:1; display:flex; flex-direction:column; justify-content:center; overflow:hidden;">
                                 <div style="display:flex; align-items:center;">
                                     ${tagHtml}
                                     <input type="text" class="shop-name-input" value="${item.name}" onchange="updateName(${index}, this.value)" style="flex:1; margin:0;">
