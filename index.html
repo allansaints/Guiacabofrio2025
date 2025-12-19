@@ -497,8 +497,10 @@
         .shop-item {
             display: flex;
             align-items: center;
-            background: white;
-            padding: 12px 15px;
+            background: white !important;
+            /* Enforce white background */
+            padding: 8px 10px;
+            /* Reduced padding */
             border-radius: 12px;
             margin-bottom: 10px;
             transition: 0.2s;
@@ -650,35 +652,32 @@
             background: transparent;
             text-align: right;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
+            /* Reduced font size */
             outline: none;
             padding: 8px 0;
             color: #333;
         }
 
+        .shop-qty-input {
+            font-size: 0.75rem;
+            /* Reduced font size */
+        }
+
+        .shop-name-input {
+            font-size: 0.9rem;
+            /* Slightly reduced */
+        }
+
         /* Tag Select Style */
-        .shop-tag-select {
-            border: none;
-            border-radius: 4px;
-            padding: 2px 4px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            cursor: pointer;
-            outline: none;
-            margin-right: 5px;
-            appearance: none;
-            /* Make it look like a badge */
-            text-align: center;
+        /* Tag Colors - Border Left Only */
+        /* Note: Backgrounds removed to keep box white as requested */
+        .shop-item.tag-bh {
+            border-left: 6px solid #2196F3;
         }
 
-        .tag-bh {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .tag-cf {
-            background: #e8f5e9;
-            color: #2e7d32;
+        .shop-item.tag-cf {
+            border-left: 6px solid #4CAF50;
         }
 
         /* Filter Styles */
@@ -719,23 +718,88 @@
 
         /* NOVO: Botão de deletar estilo X */
         /* NOVO: Botão de deletar estilo X */
-        .delete-btn {
-            background: rgba(255, 59, 48, 0.1);
-            color: var(--red);
+        /* Menu Button & Dropdown */
+        .more-btn {
+            background: transparent;
             border: none;
+            font-size: 1.2rem;
+            color: #aaa;
             cursor: pointer;
-            font-size: 0.8rem;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
+            padding: 0 5px;
+            margin-left: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-left: 8px;
-            flex-shrink: 0;
-            transition: 0.2s;
+        }
+
+        .more-menu-container {
             position: relative;
-            /* Avoid layout break */
+        }
+
+        .more-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            min-width: 140px;
+            overflow: hidden;
+        }
+
+        .more-menu.show {
+            display: block;
+        }
+
+        .more-menu-item {
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .more-menu-item:hover {
+            background: #f5f5f5;
+        }
+
+        .more-menu-item.danger {
+            color: var(--red);
+        }
+
+        /* Pretty Legend Box */
+        .shop-legend {
+            margin-top: 25px;
+            background: white;
+            padding: 12px 20px;
+            border-radius: 50px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            /* Soft shadow */
+            display: inline-flex;
+            gap: 20px;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: #555;
+            align-items: center;
+            border: 1px solid #eee;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
         }
 
         /* Mobile Add Layout */
@@ -749,6 +813,40 @@
                 display: flex;
                 gap: 8px;
                 width: 100%;
+            }
+
+            /* Mobile Item Optimization */
+            .shop-item {
+                padding: 8px 6px;
+                gap: 6px;
+            }
+
+            .shop-check {
+                width: 22px;
+                height: 22px;
+                min-width: 22px;
+                margin-right: 6px;
+            }
+
+            .shop-qty-input {
+                width: 40px;
+                margin-right: 4px;
+                font-size: 0.8rem;
+            }
+
+            .shop-price-container {
+                min-width: 75px;
+                max-width: 90px;
+                padding: 0 4px;
+            }
+
+            .shop-price-input {
+                font-size: 0.85rem;
+            }
+
+            .shop-name-input {
+                margin: 0 2px;
+                font-size: 0.9rem;
             }
         }
 
@@ -1199,6 +1297,15 @@
                 </div>
 
                 <div id="shopping-list-container"></div>
+
+                <!-- LEGEND -->
+                <div style="text-align:center; padding-bottom: 20px;">
+                    <div class="shop-legend">
+                        <div class="legend-item"><span class="legend-dot" style="background:#2196F3"></span>BH</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#4CAF50"></span>Cabo Frio
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- VIEW: MALAS -->
@@ -1758,6 +1865,35 @@
             renderShoppingList();
         }
 
+        // Global function for onclick access
+        // Global function for onclick access
+        window.cycleTag = function (index) {
+            const current = localShoppingList[index].tag || 'Cabo Frio';
+            // Toggle logic: Default to Cabo Frio (Green), click makes it BH (Blue)
+            localShoppingList[index].tag = (current === 'BH') ? 'Cabo Frio' : 'BH';
+            syncData(); // Re-renders the list
+        };
+
+        window.toggleMenu = function (event, index) {
+            event.stopPropagation();
+            // Hide all others
+            document.querySelectorAll('.more-menu').forEach(el => el.classList.remove('show'));
+            const menu = document.getElementById(`menu-${index}`);
+            if (menu) menu.classList.toggle('show');
+        };
+
+        // Close menus when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.more-menu-container')) {
+                document.querySelectorAll('.more-menu').forEach(el => el.classList.remove('show'));
+            }
+        });
+
+        function toggleFilters() {
+            const f = document.getElementById('shopping-filters');
+            f.className = f.className.includes('show') ? 'filter-container' : 'filter-container show';
+        }
+
         function setupShoppingList() {
             if (dbRef) {
                 dbRef.on('value', (snapshot) => {
@@ -1847,19 +1983,14 @@
                         const price = parseFloat(item.price || 0);
                         total += price;
 
-                        const div = document.createElement('div');
-                        div.className = `shop-item ${item.checked ? 'checked' : ''}`;
-
-                        // Tag Select
                         const isBH = item.tag === 'BH';
                         const tagClass = isBH ? 'tag-bh' : 'tag-cf';
-                        // Dropdown for tag
-                        const tagHtml = `
-                            <select class="shop-tag-select ${tagClass}" onchange="updateTag(${index}, this.value)">
-                                <option value="BH" ${item.tag === 'BH' ? 'selected' : ''}>BH</option>
-                                <option value="Cabo Frio" ${item.tag === 'Cabo Frio' ? 'selected' : ''}>CF</option>
-                            </select>
-                        `;
+
+                        const div = document.createElement('div');
+                        div.className = `shop-item ${item.checked ? 'checked' : ''} ${tagClass}`;
+
+                        // Ensure relative positioning for the absolute trigger
+                        div.style.position = 'relative';
 
                         div.innerHTML = `
                             <div class="shop-check" onclick="toggleCheck(${index})">${item.checked ? '✔' : ''}</div>
@@ -1869,7 +2000,6 @@
 
                             <div style="flex:1; display:flex; flex-direction:column; justify-content:center; overflow:hidden;">
                                 <div style="display:flex; align-items:center;">
-                                    ${tagHtml}
                                     <input type="text" class="shop-name-input" value="${item.name}" onchange="updateName(${index}, this.value)" style="flex:1; margin:0;">
                                 </div>
                             </div>
@@ -1883,7 +2013,17 @@
                                 >
                             </div>
                             
-                            <button class="delete-btn" onclick="deleteItem(${index})">✕</button>
+                            <!-- ACTIONS MENU -->
+                            <div class="more-menu-container">
+                                <button class="more-btn" onclick="toggleMenu(event, ${index})">⋮</button>
+                                <div id="menu-${index}" class="more-menu">
+                                    <div class="more-menu-item" onclick="cycleTag(${index})">
+                                        <span style="width:10px; height:10px; border-radius:50%; background:${isBH ? '#4CAF50' : '#2196F3'}"></span>
+                                        Mudar p/ ${isBH ? 'CF' : 'BH'}
+                                    </div>
+                                    <div class="more-menu-item danger" onclick="deleteItem(${index})">🗑️ Remover</div>
+                                </div>
+                            </div>
                         `;
                         container.appendChild(div);
                     });
