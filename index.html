@@ -1,19 +1,21 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cabo Frio Trip 2025</title>
-    
+
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+
     <!-- Firebase (Opcional - Lógica Local Implementada) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    
+
     <style>
         :root {
             --blue: #007AFF;
@@ -24,17 +26,21 @@
             --red: #FF3B30;
             --yellow: #FFCC00;
             --gray: #8E8E93;
-            
+
             --bg-app: #F2F2F7;
             --bg-card: #FFFFFF;
             --text-primary: #1C1C1E;
             --text-secondary: #636366;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
         body {
-            margin: 0; padding: 0;
+            margin: 0;
+            padding: 0;
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-app);
             color: var(--text-primary);
@@ -45,143 +51,669 @@
         }
 
         /* LAYOUT */
-        #layout-container { display: flex; flex-direction: column; height: 100%; width: 100%; }
-        #map-area { height: 35vh; width: 100%; background: #e5e5e5; z-index: 10; position: relative; }
-        #content-area { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 110px; scroll-behavior: smooth; background: var(--bg-app); }
+        #layout-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            position: relative;
+            /* Added for absolute positioning of toggle btn */
+        }
+
+        /* MAP TOGGLE */
+        .map-toggle-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #map-area.collapsed {
+            height: 0 !important;
+            flex: 0 0 0;
+            overflow: hidden;
+        }
+
+        #map-area {
+            height: 35vh;
+            width: 100%;
+            background: #e5e5e5;
+            z-index: 10;
+            position: relative;
+            transition: height 0.3s ease;
+        }
+
+        #content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 110px;
+            scroll-behavior: smooth;
+            background: var(--bg-app);
+        }
 
         @media (min-width: 1024px) {
-            #layout-container { flex-direction: row-reverse; }
-            #map-area { height: 100vh; width: 55%; }
-            #content-area { height: 100vh; width: 45%; padding: 40px; }
-            .dock { width: 50% !important; left: 25% !important; max-width: 600px; }
+            #layout-container {
+                flex-direction: row-reverse;
+            }
+
+            #map-area {
+                height: 100vh;
+                width: 55%;
+            }
+
+            #content-area {
+                height: 100vh;
+                width: 45%;
+                padding: 40px;
+            }
+
+            .dock {
+                width: 50% !important;
+                left: 25% !important;
+                max-width: 600px;
+            }
         }
 
         /* HEADER & DATE SELECTOR */
-        .app-header { margin-bottom: 25px; }
-        .app-title { font-size: 1.8rem; font-weight: 800; margin: 0 0 15px 0; letter-spacing: -0.5px; color: #000; }
-        .days-scroller { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
-        .day-btn {
-            background: var(--bg-card); border: 1px solid rgba(0,0,0,0.05); padding: 10px 16px;
-            border-radius: 20px; white-space: nowrap; font-weight: 600; color: var(--text-secondary);
-            cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-size: 0.9rem;
+        .app-header {
+            margin-bottom: 25px;
         }
-        .day-btn.active { background: var(--blue); color: white; box-shadow: 0 4px 12px rgba(0,122,255,0.4); transform: scale(1.05); }
+
+        .app-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin: 0 0 15px 0;
+            letter-spacing: -0.5px;
+            color: #000;
+        }
+
+        .days-scroller {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            scrollbar-width: none;
+        }
+
+        .day-btn {
+            background: var(--bg-card);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 10px 16px;
+            border-radius: 20px;
+            white-space: nowrap;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            font-size: 0.9rem;
+        }
+
+        .day-btn.active {
+            background: var(--blue);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+            transform: scale(1.05);
+        }
 
         /* CARDS */
-        .summary-card { background: var(--bg-card); border-radius: 20px; padding: 20px; margin-bottom: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
-        .checklist { background: #F0F8FF; border-radius: 12px; padding: 15px; margin-top: 15px; border-left: 4px solid var(--blue); }
-        
+        .summary-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .checklist {
+            background: #F0F8FF;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 4px solid var(--blue);
+        }
+
         .event-card {
-            background: var(--bg-card); border-radius: 18px; padding: 20px; margin-bottom: 20px;
-            position: relative; box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            background: var(--bg-card);
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
             border-left: 5px solid transparent;
         }
-        .event-header { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 12px; }
-        .event-emoji { font-size: 2.2rem; background: #F2F2F7; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; border-radius: 50%; flex-shrink: 0; }
-        .event-time-badge { font-size: 0.8rem; font-weight: 700; color: var(--text-primary); background: #E5E5EA; padding: 4px 10px; border-radius: 8px; display: inline-block; margin-bottom: 4px; }
-        .event-title { font-size: 1.25rem; font-weight: 800; margin: 0; line-height: 1.2; letter-spacing: -0.5px; }
-        .event-desc { font-size: 0.95rem; color: #3A3A3C; line-height: 1.5; margin-bottom: 12px; text-align: justify; }
-        .tips-box { font-size: 0.85rem; background: #FFF9E6; color: #8a6d3b; padding: 12px; border-radius: 8px; margin-top: 10px; border-left: 3px solid var(--yellow); line-height: 1.4; }
+
+        .event-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 12px;
+        }
+
+        .event-emoji {
+            font-size: 2.2rem;
+            background: #F2F2F7;
+            width: 55px;
+            height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .event-time-badge {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            background: #E5E5EA;
+            padding: 4px 10px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+
+        .event-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin: 0;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+        }
+
+        .event-desc {
+            font-size: 0.95rem;
+            color: #3A3A3C;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+
+        .tips-box {
+            font-size: 0.85rem;
+            background: #FFF9E6;
+            color: #8a6d3b;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 3px solid var(--yellow);
+            line-height: 1.4;
+        }
 
         /* BUTTONS */
-        .buttons-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; }
-        .btn { text-decoration: none; padding: 8px 14px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; border: none; cursor: pointer; }
-        .btn-map { background: rgba(0,122,255,0.1); color: var(--blue); }
-        .btn-insta { background: rgba(175, 82, 222, 0.1); color: var(--purple); }
-        .btn-wpp { background: rgba(52,199,89,0.1); color: var(--green); }
+        .buttons-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .btn {
+            text-decoration: none;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-map {
+            background: rgba(0, 122, 255, 0.1);
+            color: var(--blue);
+        }
+
+        .btn-insta {
+            background: rgba(175, 82, 222, 0.1);
+            color: var(--purple);
+        }
+
+        .btn-wpp {
+            background: rgba(52, 199, 89, 0.1);
+            color: var(--green);
+        }
 
         /* EXTRAS */
-        .extras-section { margin-top: 40px; margin-bottom: 20px; }
-        .extras-title { font-size: 1.1rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; }
-        .extra-card { 
-            background: rgba(255,255,255,0.8); border: 2px dashed #C7C7CC; border-radius: 16px; 
-            padding: 15px; margin-bottom: 15px; display: flex; align-items: flex-start; gap: 15px; 
+        .extras-section {
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+
+        .extras-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        .extra-card {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px dashed #C7C7CC;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
         }
 
         /* MENU */
-        .recipe-card { background: var(--bg-card); border-radius: 18px; overflow: hidden; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .recipe-img { width: 100%; height: 200px; object-fit: cover; }
-        .recipe-content { padding: 20px; }
-        .step { display: flex; gap: 15px; margin-bottom: 12px; }
-        .step-num { background: var(--orange); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; flex-shrink: 0; }
+        .recipe-card {
+            background: var(--bg-card);
+            border-radius: 18px;
+            overflow: hidden;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .recipe-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .recipe-content {
+            padding: 20px;
+        }
+
+        .step {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 12px;
+        }
+
+        .step-num {
+            background: var(--orange);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
 
         /* PEOPLE & SUMMARY */
-        .people-group { margin-bottom: 30px; }
-        .people-title { font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 10px; }
-        .people-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
-        .person-card { background: var(--bg-card); padding: 15px; border-radius: 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
-        .avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--teal)); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; }
-        .avatar.purple { background: linear-gradient(135deg, var(--purple), #FF2D55); }
-        .avatar.gray { background: #C7C7CC; }
+        .people-group {
+            margin-bottom: 30px;
+        }
 
-        .overview-row { display: flex; margin-bottom: 20px; background: var(--bg-card); border-radius: 16px; padding: 15px; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border-left: 4px solid var(--blue); }
-        .overview-date { text-align: center; padding-right: 15px; border-right: 1px solid #eee; margin-right: 15px; min-width: 60px; }
-        .overview-day { font-weight: 800; font-size: 1.1rem; color: var(--text-primary); }
-        .overview-wday { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; }
-        .overview-content { flex: 1; }
-        .night-badge { margin-top: 8px; font-size: 0.85rem; color: var(--purple); font-weight: 600; display: flex; align-items: center; gap: 5px; }
+        .people-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .people-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .person-card {
+            background: var(--bg-card);
+            padding: 15px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            position: relative;
+        }
+
+        .wpp-btn {
+            background: #25D366;
+            color: white;
+            border: none;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            margin-left: auto;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .wpp-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .wpp-icon {
+            width: 22px;
+            height: 22px;
+            fill: white;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--blue), var(--teal));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .avatar.purple {
+            background: linear-gradient(135deg, var(--purple), #FF2D55);
+        }
+
+        .avatar.gray {
+            background: #C7C7CC;
+        }
+
+        .overview-row {
+            display: flex;
+            margin-bottom: 20px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 15px;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            border-left: 4px solid var(--blue);
+        }
+
+        .overview-date {
+            text-align: center;
+            padding-right: 15px;
+            border-right: 1px solid #eee;
+            margin-right: 15px;
+            min-width: 60px;
+        }
+
+        .overview-day {
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+
+        .overview-wday {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .overview-content {
+            flex: 1;
+        }
+
+        .night-badge {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: var(--purple);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
 
         /* SHOPPING LIST */
-        .shopping-header { background: #1C1C1E; color: white; padding: 20px; border-radius: 18px; margin-bottom: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
-        .total-display { font-size: 2rem; font-weight: 800; margin-bottom: 5px; }
-        .shop-item { display: flex; align-items: center; background: white; padding: 12px 15px; border-radius: 12px; margin-bottom: 10px; transition: 0.2s; border: 1px solid #eee; }
-        .shop-item.checked { background: #f9f9f9; opacity: 0.6; }
-        .shop-check { width: 22px; height: 22px; margin-right: 12px; cursor: pointer; border-radius: 6px; border: 2px solid #ccc; display: grid; place-items: center; }
-        .shop-item.checked .shop-check { background: var(--green); border-color: var(--green); color: white; }
-        .shop-name { flex: 1; font-weight: 500; font-size: 0.95rem; }
-        .shop-item.checked .shop-name { text-decoration: line-through; }
-        .shop-price-input { width: 80px; padding: 8px; border-radius: 8px; border: 1px solid #eee; background: #f9f9f9; text-align: right; font-weight: 600; font-size: 0.9rem; }
-	/* ... (Mantenha o estilo .shopping-header existente) ... */
+        .shopping-header {
+            background: #1C1C1E;
+            color: white;
+            padding: 20px;
+            border-radius: 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
 
-	/* NOVO: Estilo para adicionar item */
-	.add-item-row { display: flex; gap: 10px; margin-bottom: 20px; }
-	.add-input { flex: 1; padding: 12px; border-radius: 12px; border: 1px solid #ddd; font-size: 1rem; outline: none; }
-	.add-btn { background: var(--blue); color: white; border: none; width: 50px; border-radius: 12px; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .total-display {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
 
-	/* ATUALIZADO: Estilo do item da lista para permitir edição */
-	.shop-name-input { 
-	    flex: 1; border: none; background: transparent; 
-	    font-size: 0.95rem; font-family: inherit; color: var(--text-primary);
-	    padding: 5px; margin: 0 5px;
-	}
-	.shop-name-input:focus { background: #f0f0f0; border-radius: 5px; outline: none; }
-	.shop-item.checked .shop-name-input { text-decoration: line-through; color: #aaa; }
+        .shop-item {
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 12px 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            transition: 0.2s;
+            border: 1px solid #eee;
+        }
 
-	/* NOVO: Botão de deletar */
-	.delete-btn { background: transparent; border: none; cursor: pointer; font-size: 1rem; padding: 5px 0 5px 10px; opacity: 0.4; transition: 0.2s; }
-	.delete-btn:hover { opacity: 1; transform: scale(1.1); }
+        .shop-item.checked {
+            background: #f9f9f9;
+            opacity: 0.6;
+        }
+
+        .shop-check {
+            width: 24px;
+            min-width: 24px;
+            /* Garante que não esmague */
+            height: 24px;
+            margin-right: 12px;
+            cursor: pointer;
+            border-radius: 6px;
+            border: 2px solid #ccc;
+            display: grid;
+            place-items: center;
+            background: white;
+            flex-shrink: 0;
+            /* Impede encolhimento */
+        }
+
+        .shop-item.checked .shop-check {
+            background: var(--green);
+            border-color: var(--green);
+            color: white;
+        }
+
+        .shop-name {
+            flex: 1;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .shop-item.checked .shop-name {
+            text-decoration: line-through;
+        }
+
+        .shop-price-container {
+            width: 100px;
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+        }
+
+        .shop-currency {
+            font-size: 0.8rem;
+            color: #888;
+            margin-right: 4px;
+        }
+
+        .shop-price-input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            text-align: right;
+            font-weight: 600;
+            font-size: 0.9rem;
+            outline: none;
+            padding: 8px 0;
+        }
+
+        /* ... (Mantenha o estilo .shopping-header existente) ... */
+
+        /* NOVO: Estilo para adicionar item */
+        .add-item-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .add-input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .add-btn {
+            background: var(--blue);
+            color: white;
+            border: none;
+            width: 50px;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ATUALIZADO: Estilo do item da lista para permitir edição */
+        .shop-name-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 0.95rem;
+            font-family: inherit;
+            color: var(--text-primary);
+            padding: 5px;
+            margin: 0 5px;
+        }
+
+        .shop-name-input:focus {
+            background: #f0f0f0;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        .shop-item.checked .shop-name-input {
+            text-decoration: line-through;
+            color: #aaa;
+        }
+
+        /* NOVO: Botão de deletar estilo X */
+        .delete-btn {
+            background: rgba(255, 59, 48, 0.1);
+            color: var(--red);
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 8px;
+            flex-shrink: 0;
+            transition: 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: var(--red);
+            color: white;
+            transform: scale(1.1);
+        }
 
         /* DOCK NAVIGATION */
         .dock {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            width: 95%; max-width: 500px;
-            background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
-            padding: 8px 10px; border-radius: 25px; 
-            display: flex; justify-content: space-between; align-items: flex-end;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.1); z-index: 1000;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 8px 10px;
+            border-radius: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            z-index: 1000;
         }
-        .dock-item { 
-            flex: 1; text-align: center; border-radius: 10px; 
-            font-weight: 600; font-size: 0.65rem; color: var(--text-secondary); 
-            cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; gap: 4px; padding-bottom: 2px;
+
+        .dock-item {
+            flex: 1;
+            text-align: center;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding-bottom: 2px;
         }
-        .dock-item.active { color: var(--blue); }
-        .dock-icon { font-size: 1.4rem; transition: 0.2s; }
-        .dock-item.active .dock-icon { transform: translateY(-3px); }
 
-        .hidden { display: none !important; }
+        .dock-item.active {
+            color: var(--blue);
+        }
 
+        .dock-icon {
+            font-size: 1.4rem;
+            transition: 0.2s;
+        }
+
+        .dock-item.active .dock-icon {
+            transform: translateY(-3px);
+        }
+
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
+
 <body>
 
     <div id="layout-container">
         <!-- MAPA -->
+        <button class="map-toggle-btn" onclick="toggleMap()">
+            <span>🗺️</span> <span id="map-toggle-text">Ocultar</span>
+        </button>
         <div id="map-area"></div>
 
         <!-- CONTEÚDO -->
         <div id="content-area">
-            
+
             <!-- VIEW: ROTEIRO -->
             <div id="view-timeline">
                 <div class="app-header">
@@ -197,24 +729,130 @@
                 <div class="people-group">
                     <div class="people-title">Confirmados (29/Dez a 03/Jan)</div>
                     <div class="people-list">
-                        <div class="person-card"><div class="avatar">L</div><div>Lan</div></div>
-                        <div class="person-card"><div class="avatar">B</div><div>Bru</div></div>
-                        <div class="person-card"><div class="avatar">M</div><div>Max</div></div>
-                        <div class="person-card"><div class="avatar">J</div><div>Jana</div></div>
+                        <div class="person-card">
+                            <div class="avatar">L</div>
+                            <div>
+                                <div style="font-weight:600">Lan</div>
+                                <div style="font-size:0.85rem; color:var(--text-secondary); white-space:nowrap;">(31)
+                                    99994-2613</div>
+                            </div>
+                            <a href="https://wa.me/5531999942613" target="_blank" class="wpp-btn" aria-label="WhatsApp">
+                                <svg viewBox="0 0 24 24" class="wpp-icon">
+                                    <path
+                                        d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01C17.18 3.03 14.69 2 12.04 2zM12.05 20.21c-1.5 0-2.96-.39-4.27-1.15l-.3-.18-3.11.82.83-3.04-.2-.31c-.82-1.31-1.26-2.83-1.26-4.42 0-4.61 3.75-8.36 8.36-8.36 2.23 0 4.33.87 5.91 2.45 1.58 1.58 2.45 3.68 2.45 5.91 0 4.61-3.74 8.36-8.35 8.36-.01-.08-.03-.08-.06-.08zm4.53-6.29c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.23-.29.35-.44.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.87.85-.87 2.07 0 1.22.89 2.39 1.01 2.56.12.17 1.75 2.67 4.23 3.74 2.48 1.07 2.48.71 2.94.66.46-.05 1.47-.6 1.67-1.18.2-.58.2-1.07.14-1.18-.06-.11-.22-.17-.47-.3z" />
+                                </svg>
+                            </a>
+                        </div>
+                        <div class="person-card">
+                            <div class="avatar">B</div>
+                            <div>
+                                <div style="font-weight:600">Bru</div>
+                                <div style="font-size:0.85rem; color:var(--text-secondary); white-space:nowrap;">(31)
+                                    99569-5819</div>
+                            </div>
+                            <a href="https://wa.me/5531995695819" target="_blank" class="wpp-btn" aria-label="WhatsApp">
+                                <svg viewBox="0 0 24 24" class="wpp-icon">
+                                    <path
+                                        d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01C17.18 3.03 14.69 2 12.04 2zM12.05 20.21c-1.5 0-2.96-.39-4.27-1.15l-.3-.18-3.11.82.83-3.04-.2-.31c-.82-1.31-1.26-2.83-1.26-4.42 0-4.61 3.75-8.36 8.36-8.36 2.23 0 4.33.87 5.91 2.45 1.58 1.58 2.45 3.68 2.45 5.91 0 4.61-3.74 8.36-8.35 8.36-.01-.08-.03-.08-.06-.08zm4.53-6.29c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.23-.29.35-.44.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.87.85-.87 2.07 0 1.22.89 2.39 1.01 2.56.12.17 1.75 2.67 4.23 3.74 2.48 1.07 2.48.71 2.94.66.46-.05 1.47-.6 1.67-1.18.2-.58.2-1.07.14-1.18-.06-.11-.22-.17-.47-.3z" />
+                                </svg>
+                            </a>
+                        </div>
+                        <div class="person-card">
+                            <div class="avatar">M</div>
+                            <div>
+                                <div style="font-weight:600">Max</div>
+                                <div style="font-size:0.85rem; color:var(--text-secondary); white-space:nowrap;">(31)
+                                    99371-6033</div>
+                            </div>
+                            <a href="https://wa.me/5531993716033" target="_blank" class="wpp-btn" aria-label="WhatsApp">
+                                <svg viewBox="0 0 24 24" class="wpp-icon">
+                                    <path
+                                        d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01C17.18 3.03 14.69 2 12.04 2zM12.05 20.21c-1.5 0-2.96-.39-4.27-1.15l-.3-.18-3.11.82.83-3.04-.2-.31c-.82-1.31-1.26-2.83-1.26-4.42 0-4.61 3.75-8.36 8.36-8.36 2.23 0 4.33.87 5.91 2.45 1.58 1.58 2.45 3.68 2.45 5.91 0 4.61-3.74 8.36-8.35 8.36-.01-.08-.03-.08-.06-.08zm4.53-6.29c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.23-.29.35-.44.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.87.85-.87 2.07 0 1.22.89 2.39 1.01 2.56.12.17 1.75 2.67 4.23 3.74 2.48 1.07 2.48.71 2.94.66.46-.05 1.47-.6 1.67-1.18.2-.58.2-1.07.14-1.18-.06-.11-.22-.17-.47-.3z" />
+                                </svg>
+                            </a>
+                        </div>
+                        <div class="person-card">
+                            <div class="avatar">J</div>
+                            <div>
+                                <div style="font-weight:600">Jana</div>
+                                <div style="font-size:0.85rem; color:var(--text-secondary); white-space:nowrap;">(55)
+                                    98427-2098</div>
+                            </div>
+                            <a href="https://wa.me/5555984272098" target="_blank" class="wpp-btn" aria-label="WhatsApp">
+                                <svg viewBox="0 0 24 24" class="wpp-icon">
+                                    <path
+                                        d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01C17.18 3.03 14.69 2 12.04 2zM12.05 20.21c-1.5 0-2.96-.39-4.27-1.15l-.3-.18-3.11.82.83-3.04-.2-.31c-.82-1.31-1.26-2.83-1.26-4.42 0-4.61 3.75-8.36 8.36-8.36 2.23 0 4.33.87 5.91 2.45 1.58 1.58 2.45 3.68 2.45 5.91 0 4.61-3.74 8.36-8.35 8.36-.01-.08-.03-.08-.06-.08zm4.53-6.29c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.23-.29.35-.44.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.87.85-.87 2.07 0 1.22.89 2.39 1.01 2.56.12.17 1.75 2.67 4.23 3.74 2.48 1.07 2.48.71 2.94.66.46-.05 1.47-.6 1.67-1.18.2-.58.2-1.07.14-1.18-.06-.11-.22-.17-.47-.3z" />
+                                </svg>
+                            </a>
+                        </div>
                     </div>
                 </div>
                 <div class="people-group">
                     <div class="people-title">Confirmados (30/Dez a 03/Jan)</div>
                     <div class="people-list">
-                        <div class="person-card"><div class="avatar purple">G</div><div>Gustavo</div></div>
-                        <div class="person-card"><div class="avatar purple">S</div><div>Steffi</div></div>
+                        <div class="person-card">
+                            <div class="avatar purple">G</div>
+                            <div>
+                                <div style="font-weight:600">Gustavo</div>
+                                <div style="font-size:0.85rem; color:var(--text-secondary); white-space:nowrap;">(31)
+                                    98771-2179</div>
+                            </div>
+                            <a href="https://wa.me/5531987712179" target="_blank" class="wpp-btn" aria-label="WhatsApp">
+                                <svg viewBox="0 0 24 24" class="wpp-icon">
+                                    <path
+                                        d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01C17.18 3.03 14.69 2 12.04 2zM12.05 20.21c-1.5 0-2.96-.39-4.27-1.15l-.3-.18-3.11.82.83-3.04-.2-.31c-.82-1.31-1.26-2.83-1.26-4.42 0-4.61 3.75-8.36 8.36-8.36 2.23 0 4.33.87 5.91 2.45 1.58 1.58 2.45 3.68 2.45 5.91 0 4.61-3.74 8.36-8.35 8.36-.01-.08-.03-.08-.06-.08zm4.53-6.29c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.23-.29.35-.44.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.87.85-.87 2.07 0 1.22.89 2.39 1.01 2.56.12.17 1.75 2.67 4.23 3.74 2.48 1.07 2.48.71 2.94.66.46-.05 1.47-.6 1.67-1.18.2-.58.2-1.07.14-1.18-.06-.11-.22-.17-.47-.3z" />
+                                </svg>
+                            </a>
+                        </div>
+                        <div class="person-card">
+                            <div class="avatar purple">S</div>
+                            <div>
+                                <div style="font-weight:600">Steffi</div>
+                                <div style="font-size:0.85rem; color:var(--text-secondary); white-space:nowrap;">(31)
+                                    99477-2898</div>
+                            </div>
+                            <a href="https://wa.me/5531994772898" target="_blank" class="wpp-btn" aria-label="WhatsApp">
+                                <svg viewBox="0 0 24 24" class="wpp-icon">
+                                    <path
+                                        d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01C17.18 3.03 14.69 2 12.04 2zM12.05 20.21c-1.5 0-2.96-.39-4.27-1.15l-.3-.18-3.11.82.83-3.04-.2-.31c-.82-1.31-1.26-2.83-1.26-4.42 0-4.61 3.75-8.36 8.36-8.36 2.23 0 4.33.87 5.91 2.45 1.58 1.58 2.45 3.68 2.45 5.91 0 4.61-3.74 8.36-8.35 8.36-.01-.08-.03-.08-.06-.08zm4.53-6.29c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.23-.29.35-.44.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.87.85-.87 2.07 0 1.22.89 2.39 1.01 2.56.12.17 1.75 2.67 4.23 3.74 2.48 1.07 2.48.71 2.94.66.46-.05 1.47-.6 1.67-1.18.2-.58.2-1.07.14-1.18-.06-.11-.22-.17-.47-.3z" />
+                                </svg>
+                            </a>
+
+                        </div>
                     </div>
                 </div>
                 <div class="people-group">
                     <div class="people-title">Indefinidos</div>
                     <div class="people-list">
-                        <div class="person-card"><div class="avatar gray">K</div><div>Keven</div></div>
-                        <div class="person-card"><div class="avatar gray">K</div><div>Karla</div></div>
+                        <div class="person-card">
+                            <div class="avatar gray">K</div>
+                            <div>
+                                <div style="font-weight:600">Keven</div>
+                                <div style="font-size:0.85rem; color:var(--text-secondary); white-space:nowrap;">(31)
+                                    99670-4870</div>
+                            </div>
+                            <a href="https://wa.me/5531996704870" target="_blank" class="wpp-btn" aria-label="WhatsApp">
+                                <svg viewBox="0 0 24 24" class="wpp-icon">
+                                    <path
+                                        d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01C17.18 3.03 14.69 2 12.04 2zM12.05 20.21c-1.5 0-2.96-.39-4.27-1.15l-.3-.18-3.11.82.83-3.04-.2-.31c-.82-1.31-1.26-2.83-1.26-4.42 0-4.61 3.75-8.36 8.36-8.36 2.23 0 4.33.87 5.91 2.45 1.58 1.58 2.45 3.68 2.45 5.91 0 4.61-3.74 8.36-8.35 8.36-.01-.08-.03-.08-.06-.08zm4.53-6.29c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.23-.29.35-.44.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.87.85-.87 2.07 0 1.22.89 2.39 1.01 2.56.12.17 1.75 2.67 4.23 3.74 2.48 1.07 2.48.71 2.94.66.46-.05 1.47-.6 1.67-1.18.2-.58.2-1.07.14-1.18-.06-.11-.22-.17-.47-.3z" />
+                                </svg>
+                            </a>
+                        </div>
+                        <div class="person-card">
+                            <div class="avatar gray">K</div>
+                            <div>
+                                <div style="font-weight:600">Karla</div>
+                                <div style="font-size:0.85rem; color:var(--text-secondary); white-space:nowrap;">(21)
+                                    00000-0000</div>
+                            </div>
+                            <!-- Assuming 00000000 is invalid, maybe no button? Or just button to nowhere? Ill exclude button or add it for consistency. Checking 21 ddd -> 5521000... -->
+                            <a href="#" class="wpp-btn" style="opacity:0.3; cursor:not-allowed">
+                                <svg viewBox="0 0 24 24" class="wpp-icon">
+                                    <path
+                                        d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01C17.18 3.03 14.69 2 12.04 2zM12.05 20.21c-1.5 0-2.96-.39-4.27-1.15l-.3-.18-3.11.82.83-3.04-.2-.31c-.82-1.31-1.26-2.83-1.26-4.42 0-4.61 3.75-8.36 8.36-8.36 2.23 0 4.33.87 5.91 2.45 1.58 1.58 2.45 3.68 2.45 5.91 0 4.61-3.74 8.36-8.35 8.36-.01-.08-.03-.08-.06-.08zm4.53-6.29c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.23-.29.35-.44.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.87.85-.87 2.07 0 1.22.89 2.39 1.01 2.56.12.17 1.75 2.67 4.23 3.74 2.48 1.07 2.48.71 2.94.66.46-.05 1.47-.6 1.67-1.18.2-.58.2-1.07.14-1.18-.06-.11-.22-.17-.47-.3z" />
+                                </svg>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -223,7 +861,10 @@
             <div id="view-summary" class="hidden">
                 <h1 class="app-title">Resumão & Vibe 💡</h1>
                 <div class="overview-row">
-                    <div class="overview-date"><div class="overview-day">29</div><div class="overview-wday">Seg</div></div>
+                    <div class="overview-date">
+                        <div class="overview-day">29</div>
+                        <div class="overview-wday">Seg</div>
+                    </div>
                     <div class="overview-content">
                         <div style="font-weight:700;">Petrópolis & Chegada</div>
                         <div style="font-size:0.85rem; color:#666;">Almoço alemão e organização da casa.</div>
@@ -231,7 +872,10 @@
                     </div>
                 </div>
                 <div class="overview-row" style="border-left-color: var(--teal)">
-                    <div class="overview-date"><div class="overview-day">30</div><div class="overview-wday">Ter</div></div>
+                    <div class="overview-date">
+                        <div class="overview-day">30</div>
+                        <div class="overview-wday">Ter</div>
+                    </div>
                     <div class="overview-content">
                         <div style="font-weight:700;">Peró & Compras</div>
                         <div style="font-size:0.85rem; color:#666;">Abastecimento da casa e praia relax.</div>
@@ -239,7 +883,10 @@
                     </div>
                 </div>
                 <div class="overview-row" style="border-left-color: var(--purple)">
-                    <div class="overview-date"><div class="overview-day">31</div><div class="overview-wday">Qua</div></div>
+                    <div class="overview-date">
+                        <div class="overview-day">31</div>
+                        <div class="overview-wday">Qua</div>
+                    </div>
                     <div class="overview-content">
                         <div style="font-weight:700;">Mar & Virada</div>
                         <div style="font-size:0.85rem; color:#666;">Passeio de barco e Reveillon.</div>
@@ -247,7 +894,10 @@
                     </div>
                 </div>
                 <div class="overview-row" style="border-left-color: var(--orange)">
-                    <div class="overview-date"><div class="overview-day">01</div><div class="overview-wday">Qui</div></div>
+                    <div class="overview-date">
+                        <div class="overview-day">01</div>
+                        <div class="overview-wday">Qui</div>
+                    </div>
                     <div class="overview-content">
                         <div style="font-weight:700;">Geribá & Pedras</div>
                         <div style="font-size:0.85rem; color:#666;">Dia de Búzios completo.</div>
@@ -255,7 +905,10 @@
                     </div>
                 </div>
                 <div class="overview-row" style="border-left-color: var(--green)">
-                    <div class="overview-date"><div class="overview-day">02</div><div class="overview-wday">Sex</div></div>
+                    <div class="overview-date">
+                        <div class="overview-day">02</div>
+                        <div class="overview-wday">Sex</div>
+                    </div>
                     <div class="overview-content">
                         <div style="font-weight:700;">Forte & Canal</div>
                         <div style="font-size:0.85rem; color:#666;">Pontos turísticos e encerramento.</div>
@@ -271,32 +924,39 @@
                 <h2 style="margin: 30px 0 15px">Bar da Casa 🍹</h2>
                 <div class="event-card" style="border-left-color: var(--purple)">
                     <h3 class="event-title">Batida de Maracujá</h3>
-                    <p class="event-desc">1 lata Leite Condensado + 1 medida Vodka + 1 medida Suco Maguary + Gelo. Bater no liquidificador.</p>
+                    <p class="event-desc">1 lata Leite Condensado + 1 medida Vodka + 1 medida Suco Maguary + Gelo. Bater
+                        no liquidificador.</p>
                 </div>
                 <div class="event-card" style="border-left-color: var(--red)">
                     <h3 class="event-title">Balena Fizz</h3>
-                    <p class="event-desc">Copo cheio de gelo. 50ml Balena. Completar com Tônica. Espremer meio limão.</p>
+                    <p class="event-desc">Copo cheio de gelo. 50ml Balena. Completar com Tônica. Espremer meio limão.
+                    </p>
+                </div>
+                <div class="event-card" style="border-left-color: var(--teal)">
+                    <h3 class="event-title">Caipivodca</h3>
+                    <p class="event-desc">50ml Vodka + Fruta (Limão/Morango/Kiwi) + 2 colheres de Açúcar + Gelo.</p>
                 </div>
             </div>
 
-	<!-- VIEW: COMPRAS -->
-	<div id="view-shopping" class="hidden">
-	    <h1 class="app-title">Lista de Compras 🛒</h1>
-    
-	    <div class="shopping-header">
-	        <div style="opacity:0.8; font-size:0.9rem">Total Estimado</div>
-	        <div class="total-display" id="total-price">R$ 0,00</div>
-	        <div style="opacity:0.8; font-size:0.9rem">R$ <span id="split-price">0,00</span> por pessoa (6)</div>
-	    </div>
+            <!-- VIEW: COMPRAS -->
+            <div id="view-shopping" class="hidden">
+                <h1 class="app-title">Lista de Compras 🛒</h1>
 
-	    <!-- ADICIONE ISSO AQUI: Campo para adicionar novos itens -->
-	    <div class="add-item-row">
-	        <input type="text" id="new-item-input" class="add-input" placeholder="Adicionar novo item...">
-	        <button class="add-btn" onclick="addNewItem()">+</button>
-	    </div>
+                <div class="shopping-header">
+                    <div style="opacity:0.8; font-size:0.9rem">Total Estimado</div>
+                    <div class="total-display" id="total-price">R$ 0,00</div>
+                    <div style="opacity:0.8; font-size:0.9rem">R$ <span id="split-price">0,00</span> por pessoa (6)
+                    </div>
+                </div>
 
-	    <div id="shopping-list-container"></div>
-	</div>
+                <!-- ADICIONE ISSO AQUI: Campo para adicionar novos itens -->
+                <div class="add-item-row">
+                    <input type="text" id="new-item-input" class="add-input" placeholder="Adicionar novo item...">
+                    <button class="add-btn" onclick="addNewItem()">+</button>
+                </div>
+
+                <div id="shopping-list-container"></div>
+            </div>
 
             <!-- VIEW: MALAS -->
             <div id="view-packing" class="hidden">
@@ -330,10 +990,11 @@
     </div>
 
     <!-- Scripts -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
         // --- DADOS COMPLETOS ---
-        const homeCoords = [-22.8635, -41.9850]; 
+        const homeCoords = [-22.8635, -41.9850];
 
         const db = {
             "29/12": {
@@ -341,62 +1002,62 @@
                 summary: "O início da aventura! Acordaremos cedo para render o dia. Foco em aproveitar a vibe histórica de Petrópolis para um almoço especial e quebrar a viagem longa.",
                 checklist: "🎒 Levar na mão (fora da mala): Agasalho leve (Petrópolis esfria), Óculos de sol, Carteira, Playlist baixada no celular.",
                 events: [
-                    { 
-                        time: "06:00 - 11:30", 
-                        title: "Viagem BH -> Petrópolis", 
-                        emoji: "🚗", 
-                        type: "travel", 
-                        desc: "Saída antecipada para evitar o trânsito da saída de BH. Rota via BR-040. Faremos uma parada técnica rápida em Juiz de Fora apenas para banheiro/café se necessário.", 
-                        tips: "Monitorem o grupo do Wpp para avisar da saída. Waze ligado o tempo todo.", 
-                        maps: "https://www.google.com/maps/search/?api=1&query=Petropolis+Centro" 
+                    {
+                        time: "06:00 - 11:30",
+                        title: "Viagem BH -> Petrópolis",
+                        emoji: "🚗",
+                        type: "travel",
+                        desc: "Saída antecipada para evitar o trânsito da saída de BH. Rota via BR-040. Faremos uma parada técnica rápida em Juiz de Fora apenas para banheiro/café se necessário.",
+                        tips: "Monitorem o grupo do Wpp para avisar da saída. Waze ligado o tempo todo.",
+                        maps: "https://www.google.com/maps/search/?api=1&query=Petropolis+Centro"
                     },
-                    { 
-                        time: "11:30 - 13:30", 
-                        title: "Almoço: Cervejaria Bohemia", 
-                        emoji: "🍻", 
-                        type: "food", 
-                        desc: "O maior complexo cervejeiro da região serrana. O restaurante fica no topo da fábrica, com ambiente histórico e sofisticado. Servem comida alemã típica e pratos brasileiros.", 
-                        tips: "Peçam a 'Régua de Degustação' (vem vários copinhos de chopp) e o Croquete de Carne como entrada. Estacionamento próximo é pago e concorrido.", 
-                        maps: "https://www.google.com/maps/search/?api=1&query=Cervejaria+Bohemia+Petropolis", 
+                    {
+                        time: "11:30 - 13:30",
+                        title: "Almoço: Cervejaria Bohemia",
+                        emoji: "🍻",
+                        type: "food",
+                        desc: "O maior complexo cervejeiro da região serrana. O restaurante fica no topo da fábrica, com ambiente histórico e sofisticado. Servem comida alemã típica e pratos brasileiros.",
+                        tips: "Peçam a 'Régua de Degustação' (vem vários copinhos de chopp) e o Croquete de Carne como entrada. Estacionamento próximo é pago e concorrido.",
+                        maps: "https://www.google.com/maps/search/?api=1&query=Cervejaria+Bohemia+Petropolis",
                         insta: "https://www.instagram.com/cervejariabohemia",
-                        coords: [-22.5137, -43.1815] 
+                        coords: [-22.5137, -43.1815]
                     },
-                    { 
-                        time: "13:30 - 14:30", 
-                        title: "Palácio de Cristal & Centro", 
-                        emoji: "💎", 
-                        type: "culture", 
-                        desc: "Passeio a pé para fazer a digestão. É uma estrutura de vidro pré-moldada encomendada pelo Conde D'Eu. Os jardins são lindos para fotos.", 
-                        tips: "A entrada é gratuita. Ótimo cenário para foto em grupo.", 
-                        maps: "https://www.google.com/maps/search/?api=1&query=Palacio+de+Cristal+Petropolis", 
-                        coords: [-22.5126, -43.1822] 
+                    {
+                        time: "13:30 - 14:30",
+                        title: "Palácio de Cristal & Centro",
+                        emoji: "💎",
+                        type: "culture",
+                        desc: "Passeio a pé para fazer a digestão. É uma estrutura de vidro pré-moldada encomendada pelo Conde D'Eu. Os jardins são lindos para fotos.",
+                        tips: "A entrada é gratuita. Ótimo cenário para foto em grupo.",
+                        maps: "https://www.google.com/maps/search/?api=1&query=Palacio+de+Cristal+Petropolis",
+                        coords: [-22.5126, -43.1822]
                     },
-                    { 
-                        time: "14:30 - 15:00", 
-                        title: "Chocolates Katz", 
-                        emoji: "🍫", 
-                        type: "food", 
-                        desc: "Tradicional chocolataria da serra. Parada estratégica para um café e garantir a sobremesa da viagem.", 
-                        tips: "O tubinho de wafer com chocolate é clássico. Levem uma barra para comer no carro.", 
-                        maps: "https://www.google.com/maps/search/?api=1&query=Katz+Chocolates+Petropolis", 
-                        coords: [-22.5100, -43.1760] 
+                    {
+                        time: "14:30 - 15:00",
+                        title: "Chocolates Katz",
+                        emoji: "🍫",
+                        type: "food",
+                        desc: "Tradicional chocolataria da serra. Parada estratégica para um café e garantir a sobremesa da viagem.",
+                        tips: "O tubinho de wafer com chocolate é clássico. Levem uma barra para comer no carro.",
+                        maps: "https://www.google.com/maps/search/?api=1&query=Katz+Chocolates+Petropolis",
+                        coords: [-22.5100, -43.1760]
                     },
-                    { 
-                        time: "15:00 - 18:30", 
-                        title: "Descida da Serra -> Cabo Frio", 
-                        emoji: "🛣️", 
-                        type: "travel", 
-                        desc: "Trecho final da viagem. Atenção redobrada na Via Lagos, pois costuma ter radar e fiscalização.", 
-                        maps: "https://www.google.com/maps/search/?api=1&query=Cabo+Frio" 
+                    {
+                        time: "15:00 - 18:30",
+                        title: "Descida da Serra -> Cabo Frio",
+                        emoji: "🛣️",
+                        type: "travel",
+                        desc: "Trecho final da viagem. Atenção redobrada na Via Lagos, pois costuma ter radar e fiscalização.",
+                        maps: "https://www.google.com/maps/search/?api=1&query=Cabo+Frio"
                     },
-                    { 
-                        time: "19:00 - 22:00", 
-                        title: "Check-in & Jantar", 
-                        emoji: "🍝", 
-                        type: "home", 
-                        desc: "Entrada na casa (Alameda Treze). Divisão de tarefas: uma equipe faz a limpeza expressa (tirar poeira, arrumar camas) e a outra prepara o Penne Rústico.", 
-                        coords: homeCoords, 
-                        maps: "https://www.google.com/maps/search/?api=1&query=Alameda+Treze+511+Jardim+Pero+Cabo+Frio" 
+                    {
+                        time: "19:00 - 22:00",
+                        title: "Check-in & Jantar",
+                        emoji: "🍝",
+                        type: "home",
+                        desc: "Entrada na casa (Alameda Treze). Divisão de tarefas: uma equipe faz a limpeza expressa (tirar poeira, arrumar camas) e a outra prepara o Penne Rústico.",
+                        coords: homeCoords,
+                        maps: "https://www.google.com/maps/search/?api=1&query=Alameda+Treze+511+Jardim+Pero+Cabo+Frio"
                     }
                 ],
                 extras: [
@@ -470,102 +1131,219 @@
         };
 
         const recipes = [
-            { title: "Penne Rústico (29/12)", img: "https://images.unsplash.com/photo-1608219992759-8d74ed8d76eb?w=600&q=80", steps: ["Cozinhar 500g Penne al dente.", "Selar 600g Filé Mignon em tiras com azeite bem quente.", "Refogar alho, cebola e temperos na mesma panela.", "Juntar 2 latas tomate pelati e manjericão.", "Misturar tudo e servir com parmesão."] },
-            { title: "Strogonoff (30/12)", img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&q=80", steps: ["Dourar 1kg frango em cubos.", "Adicionar cebola, ketchup e mostarda.", "Desligar fogo (importante).", "Misturar 3 caixas creme de leite desnatado.", "Servir com arroz e batata palha."] },
-            { title: "Churrasco (31/12)", img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&q=80", steps: ["Acender carvão 40min antes.", "Picanha fatiada grossa só no Sal Grosso.", "Linguiça na brasa média.", "Pão de alho nas bordas.", "Farofa e Vinagrete."] },
-            { title: "Lasanha (01/01)", img: "https://plus.unsplash.com/premium_photo-1664478291780-0c67f5fb15e6?w=800&q=80", steps: ["Fazer molho bolonhesa bem caldoso (500g carne).", "Montar: Molho > Massa > Presunto > Queijo.", "Repetir até o topo.", "Forno 200°C por 40 min."] },
-            { title: "Burger (02/01)", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&q=80", steps: ["Moldar carne (fraldinha) em bolas de 180g.", "Grelhar frigideira muito quente, amassar.", "Sal e pimenta só na hora.", "Queijo em cima e abafar.", "Pão selado na manteiga."] }
+            {
+                title: "Penne Rústico (29/12)",
+                img: "https://images.unsplash.com/photo-1608219992759-8d74ed8d76eb?w=600&q=80",
+                ingredients: ["500g Penne", "600g Filé Mignon em tiras", "2 latas Tomate Pelati", "Manjericão Fresco", "Parmesão Ralado"],
+                steps: ["Cozinhar o Penne al dente.", "Selar a carne com azeite bem quente.", "Refogar alho, cebola e temperos na mesma panela.", "Juntar o tomate e o manjericão.", "Misturar tudo e servir com parmesão."]
+            },
+            {
+                title: "Strogonoff (30/12)",
+                img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&q=80",
+                ingredients: ["1kg Frango em cubos", "3 cx Creme de Leite (Zero Lactose)", "Ketchup e Mostarda", "Batata Palha", "Arroz Branco"],
+                steps: ["Dourar o frango.", "Adicionar cebola, ketchup e mostarda.", "Desligar o fogo.", "Misturar o creme de leite.", "Servir com arroz e batata palha."]
+            },
+            {
+                title: "Churrasco (31/12)",
+                img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&q=80",
+                ingredients: ["Picanha", "Linguiça Toscana", "Pão de Alho", "Farofa", "Vinagrete"],
+                steps: ["Acender carvão 40min antes.", "Picanha fatiada grossa só no Sal Grosso.", "Linguiça na brasa média.", "Assar pão de alho nas bordas."]
+            },
+            {
+                title: "Lasanha (01/01)",
+                img: "https://plus.unsplash.com/premium_photo-1664478291780-0c67f5fb15e6?w=800&q=80",
+                ingredients: ["Massa de Lasanha", "500g Carne Moída (Molho)", "800g Presunto", "800g Mussarela"],
+                steps: ["Fazer molho bolonhesa bem caldoso.", "Montar: Molho > Massa > Presunto > Queijo.", "Repetir até o topo.", "Forno 200°C por 40 min."]
+            },
+            {
+                title: "Burger (02/01)",
+                img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&q=80",
+                ingredients: ["Fraldinha moida", "Queijo Cheddar/Prato", "Pão de Hambúrguer", "Bacon"],
+                steps: ["Moldar carne em bolas de 180g.", "Grelhar em frigideira muito quente e amassar (smash).", "Sal e pimenta na hora.", "Queijo em cima e abafar."]
+            }
         ];
 
         // Listas Estáticas
         const packingList = {
-    "Eletrônicos": ["Power Bank", "Fones de ouvido", "Carregador", "Cabo USB", "Adaptador de tomada ou T", "Carregador de outros acessórios", "Livro/Kindle", "Caixinha de som portátil"],
-    "Higiene": ["Xampu", "Condicionador", "Máscara de hidratação", "Creme de Cabelo / Gel / Finalizador", "Sabonete ou Sabonete Líquido", "Creme Hidratante", "Escova", "Fio Dental", "Creme Dental", "Protetor solar corporal", "Protetor solar rosto", "Bronzeador", "Pós Sol", "Repelente", "Protetor Labial", "Perfume", "Anti Transpirante", "Camisinha", "Lubrificante", "Escova de cabelo", "Absorvente", "Absorvente interno"],
-    "Medicação": ["Caixa de remédios", "Dipirona/Paracetamol/Ibuprofeno", "Dorflex/Miorrelax", "Neopiridim/Strepsils/Ciflogex", "ENO", "Epocler/Engov", "Loperamida", "Curativo", "Neomicina/Bacitracina/Cetoconazol", "Termômetro", "Loratadina/Allegra/Histamin", "Antigases", "Anticoncepcional", "Remédios específicos/uso contínuo"],
-    "Outros": ["Lençol", "Travesseiro", "Coberta", "Touca de cetim", "Fronha"],
-    "Pessoal": ["Celular", "Relógio", "Carteira", "Cartões de crédito", "Cartão de saúde (SUS e/ou Plano)", "Óculos de grau", "CNH", "Chaves de casa", "Chaves do carro", "Documento do carro", "Garrafa de água", "Dinheiro físico de emergência"],
-    "Roupa": ["Camisa/Camiseta", "Regata", "Pijama", "Short de praia", "Short/bermuda de sair", "Calça", "Sunga", "Meia", "Cueca", "Calcinha", "Sutiã", "Biquini", "Maiô", "Kimono/Vestido/Bata", "Chinelo", "Tênis", "Chapéu/Boné", "Óculos de Sol", "Bolsa", "Shoulder Bag / Pochete / Bag", "Lenço", "Rasteirinha/Sandália", "Canga/Toalha de Praia", "Sacola"]
-};
+            "Eletrônicos ⚡": {
+                color: "var(--yellow)",
+                items: [
+                    { name: "Power Bank", emoji: "🔋" },
+                    { name: "Fones de ouvido", emoji: "🎧" },
+                    { name: "Carregador Celular", emoji: "🔌" },
+                    { name: "Cabo USB/Lightning", emoji: "➰" },
+                    { name: "Adaptador de Tomada (T)", emoji: "⚡" },
+                    { name: "Carregador Watch/Outros", emoji: "⌚" },
+                    { name: "Kindle/Livro", emoji: "📖" },
+                    { name: "Caixinha de som", emoji: "🔊" }
+                ]
+            },
+            "Higiene 🛁": {
+                color: "var(--teal)",
+                items: [
+                    { name: "Xampu", emoji: "🧴" },
+                    { name: "Condicionador", emoji: "🧴" },
+                    { name: "Máscara Capilar", emoji: "💆‍♀️" },
+                    { name: "Creme de Pentear/Gel", emoji: "💇‍♂️" },
+                    { name: "Sabonete Líquido/Barra", emoji: "🧼" },
+                    { name: "Hidratante Corporal", emoji: "🧴" },
+                    { name: "Escova de Dentes", emoji: "🪥" },
+                    { name: "Pasta de Dente", emoji: "�" },
+                    { name: "Fio Dental", emoji: "�" },
+                    { name: "Protetor Solar Corpo", emoji: "☀️" },
+                    { name: "Protetor Solar Rosto", emoji: "😎" },
+                    { name: "Bronzeador", emoji: "🥥" },
+                    { name: "Pós Sol", emoji: "🌡️" },
+                    { name: "Repelente", emoji: "🦟" },
+                    { name: "Protetor Labial", emoji: "👄" },
+                    { name: "Perfume", emoji: "👃" },
+                    { name: "Desodorante", emoji: "💨" },
+                    { name: "Preservativo/Lubrif.", emoji: "🍆" },
+                    { name: "Escova de Cabelo", emoji: "�" },
+                    { name: "Absorvente", emoji: "🩸" }
+                ]
+            },
+            "Medicação 💊": {
+                color: "var(--red)",
+                items: [
+                    { name: "Dipirona/Paracetamol", emoji: "💊" },
+                    { name: "Dorflex/Relaxante", emoji: "😖" },
+                    { name: "Pastilha Garganta", emoji: "�️" },
+                    { name: "ENO/Antiácido", emoji: "🔥" },
+                    { name: "Epocler/Engov", emoji: "🤢" },
+                    { name: "Antialérgico", emoji: "🤧" },
+                    { name: "Curativos/Bandelds", emoji: "🩹" },
+                    { name: "Anticoncepcional", emoji: "📅" },
+                    { name: "Remédios Uso Contínuo", emoji: "🔄" }
+                ]
+            },
+            "Pessoal 👜": {
+                color: "var(--purple)",
+                items: [
+                    { name: "Celular", emoji: "📱" },
+                    { name: "Relógio/Smartwatch", emoji: "⌚" },
+                    { name: "Carteira & Dinheiro", emoji: "💸" },
+                    { name: "Cartões Crédito/Débito", emoji: "💳" },
+                    { name: "Cartão Plano Saúde/SUS", emoji: "🏥" },
+                    { name: "CNH/RG (Físico)", emoji: "🪪" },
+                    { name: "Óculos de Grau", emoji: "�" },
+                    { name: "Óculos de Sol", emoji: "🕶️" },
+                    { name: "Chaves Casa/Carro", emoji: "🔑" },
+                    { name: "Documento Carro", emoji: "📄" },
+                    { name: "Garrafa de Água", emoji: "💧" }
+                ]
+            },
+            "Roupa 👕": {
+                color: "var(--blue)",
+                items: [
+                    { name: "Camisetas/Regatas", emoji: "👕" },
+                    { name: "Shorts de Praia", emoji: "🩳" },
+                    { name: "Bermudas de Sair", emoji: "👖" },
+                    { name: "Calça (Sair/Frio)", emoji: "👖" },
+                    { name: "Sunga/Biquini/Maiô", emoji: "👙" },
+                    { name: "Roupa Íntima (Cueca/Calcinha)", emoji: "🩲" },
+                    { name: "Pijama", emoji: "😴" },
+                    { name: "Meias", emoji: "🧦" },
+                    { name: "Chinelo", emoji: "🩴" },
+                    { name: "Tênis/Calçado Fechado", emoji: "👟" },
+                    { name: "Sandália/Rasteirinha", emoji: "👡" },
+                    { name: "Boné/Chapéu", emoji: "🧢" },
+                    { name: "Saída de Praia/Canga", emoji: "🏖️" },
+                    { name: "Bolsa/Mochila/Pochete", emoji: "🎒" }
+                ]
+            },
+            "Outros 🛌": {
+                color: "var(--gray)",
+                items: [
+                    { name: "Lençol", emoji: "🛏️" },
+                    { name: "Fronha", emoji: "⬜" },
+                    { name: "Travesseiro", emoji: "😴" },
+                    { name: "Coberta/Manta", emoji: "🥶" },
+                    { name: "Touca de Cetim", emoji: "💆" },
+                    { name: "Toalha de Banho", emoji: "🚿" }
+                ]
+            }
+        };
 
         // Itens Iniciais de Compra
-const initialShoppingItems = [
-    { id: 1, name: "Creme de Leite ZERO LACTOSE (6 cx)", price: 30.0, checked: false },
-    { id: 2, name: "Leite Condensado ZERO LACTOSE (4 cx)", price: 32.0, checked: false },
-    { id: 3, name: "Leite ZERO LACTOSE (3 lt)", price: 18.0, checked: false },
-    { id: 4, name: "Requeijão ZERO LACTOSE (1 pt)", price: 12.0, checked: false },
-    { id: 5, name: "Açúcar (1 kg)", price: 5.0, checked: false },
-    { id: 6, name: "Café em Pó (250g) (1 pct)", price: 10.0, checked: false },
-    { id: 7, name: "Filtro de Café 103 (1 pct)", price: 5.0, checked: false },
-    { id: 8, name: "Massa de Lasanha (2 cx)", price: 16.0, checked: false },
-    { id: 9, name: "Azeite de Oliva (500ml) (1 gf)", price: 35.0, checked: false },
-    { id: 10, name: "Arroz Branco (2 kg)", price: 12.0, checked: false },
-    { id: 11, name: "Macarrão Penne (500g) (1 pct)", price: 6.0, checked: false },
-    { id: 12, name: "Molho Tomate Pelado (6 lat)", price: 42.0, checked: false },
-    { id: 13, name: "Batata Palha (Gde) (2 pct)", price: 16.0, checked: false },
-    { id: 14, name: "Farofa Pronta (1 pct)", price: 8.0, checked: false },
-    { id: 15, name: "Ketchup / Mostarda / Maionese (1 un)", price: 30.0, checked: false },
-    { id: 16, name: "Temperos Secos (1 kit)", price: 15.0, checked: false },
-    { id: 17, name: "Sal Grosso (1kg) (1 pct)", price: 5.0, checked: false },
-    { id: 18, name: "Suco Conc. Maracujá (1 gf)", price: 12.0, checked: false },
-    { id: 19, name: "Alcatra ou Contra-filé (Bifes) (800 g)", price: 45.0, checked: false },
-    { id: 20, name: "Picanha ou Alcatra (Peça) (1.5 kg)", price: 100.0, checked: false },
-    { id: 21, name: "Linguiça Toscana (1.0 kg)", price: 25.0, checked: false },
-    { id: 22, name: "Coxinha da Asa (Temp.) (1.0 kg)", price: 20.0, checked: false },
-    { id: 23, name: "Peito de Frango (Cubos) (1.5 kg)", price: 30.0, checked: false },
-    { id: 24, name: "Carne Moída (Patinho) (2.2 kg)", price: 85.0, checked: false },
-    { id: 25, name: "Bacon Fatiado (400 g)", price: 35.0, checked: false },
-    { id: 26, name: "Mussarela Fatiada (800 g)", price: 45.0, checked: false },
-    { id: 27, name: "Mussarela ZERO LACTOSE (200 g)", price: 18.0, checked: false },
-    { id: 28, name: "Presunto Fatiado (800 g)", price: 35.0, checked: false },
-    { id: 29, name: "Manteiga / Requeijão (1 pt)", price: 22.0, checked: false },
-    { id: 30, name: "Margarina Vegetal (1 pt)", price: 8.0, checked: false },
-    { id: 31, name: "Leite Integral (2 lt)", price: 10.0, checked: false },
-    { id: 32, name: "Ovos Brancos (40 un)", price: 36.0, checked: false },
-    { id: 33, name: "Pão de Alho (2 pct)", price: 25.0, checked: false },
-    { id: 34, name: "Cebola (1.5 kg)", price: 8.0, checked: false },
-    { id: 35, name: "Alho (4 cb)", price: 5.0, checked: false },
-    { id: 36, name: "Tomate (8 un)", price: 10.0, checked: false },
-    { id: 37, name: "Alface Americana (2 pé)", price: 10.0, checked: false },
-    { id: 38, name: "Limão Taiti (1.5 kg)", price: 10.0, checked: false },
-    { id: 39, name: "Frutas (Banana/Maçã) (1 kg)", price: 20.0, checked: false },
-    { id: 40, name: "Pão de Hambúrguer (2 pct)", price: 18.0, checked: false },
-    { id: 41, name: "Pão de Forma (3 pct)", price: 25.0, checked: false },
-    { id: 42, name: "Pão Francês (5 un)", price: 5.0, checked: false },
-    { id: 43, name: "Carvão (5kg) (1 sc)", price: 25.0, checked: false },
-    { id: 44, name: "Água de Coco (Caixa) (3 lt)", price: 30.0, checked: false },
-    { id: 45, name: "Xeque Mate (12 lat)", price: 60.0, checked: false },
-    { id: 46, name: "Mascate Drinques Melancia (8 lat)", price: 90.0, checked: true },
-    { id: 47, name: "Ballena Morango (1 gf)", price: 0.0, checked: true },
-    { id: 48, name: "Beats (Senses/GT) (6 lat)", price: 30.0, checked: false },
-    { id: 49, name: "Vodka (2 gf)", price: 80.0, checked: false },
-    { id: 50, name: "Sprite / Soda (2L) (3 gf)", price: 25.0, checked: false },
-    { id: 51, name: "Suco Integral (1.5L) (3 gf)", price: 35.0, checked: false },
-    { id: 52, name: "Refrigerante (2L) (3 gf)", price: 25.0, checked: false },
-    { id: 53, name: "Água Mineral (1.5L) (4 fd)", price: 60.0, checked: false },
-    { id: 54, name: "Gelo Cubo (5 sc)", price: 50.0, checked: false }
-];
+        const initialShoppingItems = [
+            { id: 1, name: "Creme de Leite ZERO LACTOSE (6 cx)", price: 30.0, checked: false },
+            { id: 2, name: "Leite Condensado ZERO LACTOSE (4 cx)", price: 32.0, checked: false },
+            { id: 3, name: "Leite ZERO LACTOSE (3 lt)", price: 18.0, checked: false },
+            { id: 4, name: "Requeijão ZERO LACTOSE (1 pt)", price: 12.0, checked: false },
+            { id: 5, name: "Açúcar (1 kg)", price: 5.0, checked: false },
+            { id: 6, name: "Café em Pó (250g) (1 pct)", price: 10.0, checked: false },
+            { id: 7, name: "Filtro de Café 103 (1 pct)", price: 5.0, checked: false },
+            { id: 8, name: "Massa de Lasanha (2 cx)", price: 16.0, checked: false },
+            { id: 9, name: "Azeite de Oliva (500ml) (1 gf)", price: 35.0, checked: false },
+            { id: 10, name: "Arroz Branco (2 kg)", price: 12.0, checked: false },
+            { id: 11, name: "Macarrão Penne (500g) (1 pct)", price: 6.0, checked: false },
+            { id: 12, name: "Molho Tomate Pelado (6 lat)", price: 42.0, checked: false },
+            { id: 13, name: "Batata Palha (Gde) (2 pct)", price: 16.0, checked: false },
+            { id: 14, name: "Farofa Pronta (1 pct)", price: 8.0, checked: false },
+            { id: 15, name: "Ketchup / Mostarda / Maionese (1 un)", price: 30.0, checked: false },
+            { id: 16, name: "Temperos Secos (1 kit)", price: 15.0, checked: false },
+            { id: 17, name: "Sal Grosso (1kg) (1 pct)", price: 5.0, checked: false },
+            { id: 18, name: "Suco Conc. Maracujá (1 gf)", price: 12.0, checked: false },
+            { id: 19, name: "Alcatra ou Contra-filé (Bifes) (800 g)", price: 45.0, checked: false },
+            { id: 20, name: "Picanha ou Alcatra (Peça) (1.5 kg)", price: 100.0, checked: false },
+            { id: 21, name: "Linguiça Toscana (1.0 kg)", price: 25.0, checked: false },
+            { id: 22, name: "Coxinha da Asa (Temp.) (1.0 kg)", price: 20.0, checked: false },
+            { id: 23, name: "Peito de Frango (Cubos) (1.5 kg)", price: 30.0, checked: false },
+            { id: 24, name: "Carne Moída (Patinho) (2.2 kg)", price: 85.0, checked: false },
+            { id: 25, name: "Bacon Fatiado (400 g)", price: 35.0, checked: false },
+            { id: 26, name: "Mussarela Fatiada (800 g)", price: 45.0, checked: false },
+            { id: 27, name: "Mussarela ZERO LACTOSE (200 g)", price: 18.0, checked: false },
+            { id: 28, name: "Presunto Fatiado (800 g)", price: 35.0, checked: false },
+            { id: 29, name: "Manteiga / Requeijão (1 pt)", price: 22.0, checked: false },
+            { id: 30, name: "Margarina Vegetal (1 pt)", price: 8.0, checked: false },
+            { id: 31, name: "Leite Integral (2 lt)", price: 10.0, checked: false },
+            { id: 32, name: "Ovos Brancos (40 un)", price: 36.0, checked: false },
+            { id: 33, name: "Pão de Alho (2 pct)", price: 25.0, checked: false },
+            { id: 34, name: "Cebola (1.5 kg)", price: 8.0, checked: false },
+            { id: 35, name: "Alho (4 cb)", price: 5.0, checked: false },
+            { id: 36, name: "Tomate (8 un)", price: 10.0, checked: false },
+            { id: 37, name: "Alface Americana (2 pé)", price: 10.0, checked: false },
+            { id: 38, name: "Limão Taiti (1.5 kg)", price: 10.0, checked: false },
+            { id: 39, name: "Frutas (Banana/Maçã) (1 kg)", price: 20.0, checked: false },
+            { id: 40, name: "Pão de Hambúrguer (2 pct)", price: 18.0, checked: false },
+            { id: 41, name: "Pão de Forma (3 pct)", price: 25.0, checked: false },
+            { id: 42, name: "Pão Francês (5 un)", price: 5.0, checked: false },
+            { id: 43, name: "Carvão (5kg) (1 sc)", price: 25.0, checked: false },
+            { id: 44, name: "Água de Coco (Caixa) (3 lt)", price: 30.0, checked: false },
+            { id: 45, name: "Xeque Mate (12 lat)", price: 60.0, checked: false },
+            { id: 46, name: "Mascate Drinques Melancia (8 lat)", price: 90.0, checked: true },
+            { id: 47, name: "Ballena Morango (1 gf)", price: 0.0, checked: true },
+            { id: 48, name: "Beats (Senses/GT) (6 lat)", price: 30.0, checked: false },
+            { id: 49, name: "Vodka (2 gf)", price: 80.0, checked: false },
+            { id: 50, name: "Sprite / Soda (2L) (3 gf)", price: 25.0, checked: false },
+            { id: 51, name: "Suco Integral (1.5L) (3 gf)", price: 35.0, checked: false },
+            { id: 52, name: "Refrigerante (2L) (3 gf)", price: 25.0, checked: false },
+            { id: 53, name: "Água Mineral (1.5L) (4 fd)", price: 60.0, checked: false },
+            { id: 54, name: "Gelo Cubo (5 sc)", price: 50.0, checked: false }
+        ];
 
         // --- LÓGICA & FIREBASE ---
         let map;
         let markers = [];
         let polyline;
         let localShoppingList = [];
-        
+
         // 1. COLE AQUI SUAS CHAVES DO FIREBASE
         const firebaseConfig = {
-  	apiKey: "AIzaSyA6Qje4rE2Qw1hB9lbvfkVlVxVPCa8W_hg",
-  	authDomain: "viagem-cabo-frio.firebaseapp.com",
-  	databaseURL: "https://viagem-cabo-frio-default-rtdb.firebaseio.com",
-  	projectId: "viagem-cabo-frio",
-  	storageBucket: "viagem-cabo-frio.firebasestorage.app",
-  	messagingSenderId: "305397708038",
-  	appId: "1:305397708038:web:db038c34373f70c6acda87",
-  	measurementId: "G-354QCH4RVR"
-	};
+            apiKey: "AIzaSyA6Qje4rE2Qw1hB9lbvfkVlVxVPCa8W_hg",
+            authDomain: "viagem-cabo-frio.firebaseapp.com",
+            databaseURL: "https://viagem-cabo-frio-default-rtdb.firebaseio.com",
+            projectId: "viagem-cabo-frio",
+            storageBucket: "viagem-cabo-frio.firebasestorage.app",
+            messagingSenderId: "305397708038",
+            appId: "1:305397708038:web:db038c34373f70c6acda87",
+            measurementId: "G-354QCH4RVR"
+        };
 
         let dbRef;
         try {
-            if(firebaseConfig.apiKey !== "SUA_API_KEY_AQUI") {
+            if (firebaseConfig.apiKey !== "SUA_API_KEY_AQUI") {
                 firebase.initializeApp(firebaseConfig);
                 dbRef = firebase.database().ref('lista_compras');
             } else {
@@ -582,21 +1360,30 @@ const initialShoppingItems = [
 
             const menuContainer = document.getElementById('menu-container');
             recipes.forEach(r => {
+                const ingredientsHtml = r.ingredients.map(ing => `<li>${ing}</li>`).join('');
                 menuContainer.innerHTML += `
                     <div class="recipe-card">
                         <img src="${r.img}" class="recipe-img">
                         <div class="recipe-content">
                             <h3 style="margin:0 0 10px 0">${r.title}</h3>
-                            ${r.steps.map((s, i) => `<div class="step"><div class="step-num">${i+1}</div><div style="font-size:0.9rem; line-height:1.4">${s}</div></div>`).join('')}
+                            <div style="background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:15px; font-size:0.85rem;">
+                                <div style="font-weight:700; margin-bottom:5px; color:#555">Ingredientes:</div>
+                                <ul style="margin:0; padding-left:20px;">${ingredientsHtml}</ul>
+                            </div>
+                            ${r.steps.map((s, i) => `<div class="step"><div class="step-num">${i + 1}</div><div style="font-size:0.9rem; line-height:1.4">${s}</div></div>`).join('')}
                         </div>
                     </div>`;
             });
 
             const packContainer = document.getElementById('packing-list-container');
-            for (const [category, items] of Object.entries(packingList)) {
-                let html = `<div style="font-weight:700; color:#888; margin:20px 0 10px 0; text-transform:uppercase; font-size:0.9rem;">${category}</div>`;
-                items.forEach(item => {
-                    html += `<div style="padding:10px 0; border-bottom:1px solid #eee; display:flex; align-items:center;"><span style="margin-right:10px;">⬜</span> ${item}</div>`;
+            for (const [category, data] of Object.entries(packingList)) {
+                let html = `<div style="background: ${data.color || '#eee'}; color: white; padding: 8px 12px; border-radius: 8px; margin: 25px 0 10px 0; font-weight: 700; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px;">${category}</div>`;
+                data.items.forEach(item => {
+                    html += `
+                    <div style="padding:10px 0; border-bottom:1px solid #eee; display:flex; align-items:center;">
+                        <span style="font-size:1.2rem; margin-right:12px;">${item.emoji}</span> 
+                        <span style="font-size:0.95rem;">${item.name}</span>
+                    </div>`;
                 });
                 packContainer.innerHTML += html;
             }
@@ -605,13 +1392,27 @@ const initialShoppingItems = [
             setupShoppingList();
         }
 
+        function toggleMap() {
+            const mapArea = document.getElementById('map-area');
+            const btnText = document.getElementById('map-toggle-text');
+
+            if (mapArea.classList.contains('collapsed')) {
+                mapArea.classList.remove('collapsed');
+                btnText.innerText = "Ocultar";
+                setTimeout(() => map.invalidateSize(), 300);
+            } else {
+                mapArea.classList.add('collapsed');
+                btnText.innerText = "Mapa";
+            }
+        }
+
         function renderDays() {
             const container = document.getElementById('days-container');
             const dates = Object.keys(db);
             container.innerHTML = '';
             dates.forEach((date, i) => {
                 const btn = document.createElement('div');
-                btn.className = `day-btn ${i===0 ? 'active' : ''}`;
+                btn.className = `day-btn ${i === 0 ? 'active' : ''}`;
                 btn.innerText = db[date].label;
                 btn.onclick = () => loadDay(date, btn);
                 container.appendChild(btn);
@@ -620,11 +1421,11 @@ const initialShoppingItems = [
         }
 
         function loadDay(date, btn) {
-            if(btn) { document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
+            if (btn) { document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
             const data = db[date];
             const content = document.getElementById('day-content');
-            
-            if(polyline) map.removeLayer(polyline);
+
+            if (polyline) map.removeLayer(polyline);
             markers.forEach(m => map.removeLayer(m));
             markers = [];
             const routePoints = [];
@@ -641,8 +1442,8 @@ const initialShoppingItems = [
                 const borderColor = typeColors[ev.type];
 
                 let btns = '';
-                if(ev.maps) btns += `<a href="${ev.maps}" target="_blank" class="btn btn-map">🗺️ Maps</a>`;
-                if(ev.insta) btns += `<a href="${ev.insta}" target="_blank" class="btn btn-insta">📸 Insta</a>`;
+                if (ev.maps) btns += `<a href="${ev.maps}" target="_blank" class="btn btn-map">🗺️ Maps</a>`;
+                if (ev.insta) btns += `<a href="${ev.insta}" target="_blank" class="btn btn-insta">📸 Insta</a>`;
 
                 html += `
                     <div class="event-card" style="border-left-color: ${borderColor}">
@@ -658,15 +1459,15 @@ const initialShoppingItems = [
                         <div class="buttons-row">${btns}</div>
                     </div>`;
 
-                if(ev.coords) {
-                    if(routePoints.length === 0 && ev.type !== 'travel' && !ev.title.includes("Saída")) routePoints.push(homeCoords);
+                if (ev.coords) {
+                    if (routePoints.length === 0 && ev.type !== 'travel' && !ev.title.includes("Saída")) routePoints.push(homeCoords);
                     routePoints.push(ev.coords);
                     const m = L.marker(ev.coords, { icon: L.divIcon({ className: '', html: `<div style="background:${borderColor}; width:16px; height:16px; border-radius:50%; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3)"></div>` }) }).addTo(map).bindPopup(ev.title);
                     markers.push(m);
                 }
             });
 
-            if(data.extras) {
+            if (data.extras) {
                 html += `<div class="extras-section"><div class="extras-title">✨ Opções Extras</div>`;
                 data.extras.forEach(ex => {
                     html += `
@@ -684,7 +1485,7 @@ const initialShoppingItems = [
             content.innerHTML = html;
             content.scrollTop = 0;
 
-            if(routePoints.length > 1) {
+            if (routePoints.length > 1) {
                 polyline = L.polyline(routePoints, { color: data.color, weight: 4, opacity: 0.7, dashArray: '5, 10' }).addTo(map);
                 map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
             } else {
@@ -721,34 +1522,41 @@ const initialShoppingItems = [
             const container = document.getElementById('shopping-list-container');
             container.innerHTML = '';
             let total = 0;
-            
+
             // Garante que a lista existe
             if (!localShoppingList) localShoppingList = [];
 
             localShoppingList.forEach((item, index) => {
                 const price = parseFloat(item.price || 0);
                 total += price;
-                
+
                 const div = document.createElement('div');
                 div.className = `shop-item ${item.checked ? 'checked' : ''}`;
-                
+
                 // HTML com campos editáveis e botão de deletar
                 div.innerHTML = `
                     <div class="shop-check" onclick="toggleCheck(${index})">${item.checked ? '✔' : ''}</div>
                     
                     <input type="text" class="shop-name-input" value="${item.name}" onchange="updateName(${index}, this.value)">
                     
-                    <input type="number" class="shop-price-input" value="${price > 0 ? price : ''}" placeholder="R$" onchange="updatePrice(${index}, this.value)">
+                    <div class="shop-price-container">
+                        <span class="shop-currency">R$</span>
+                        <input type="text" inputmode="decimal" class="shop-price-input" 
+                            value="${price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}" 
+                            onchange="updatePrice(${index}, this.value)"
+                            onfocus="this.select()"
+                        >
+                    </div>
                     
-                    <button class="delete-btn" onclick="deleteItem(${index})">🗑️</button>
+                    <button class="delete-btn" onclick="deleteItem(${index})">✕</button>
                 `;
                 container.appendChild(div);
             });
 
             // Atualiza os totais no topo
-            document.getElementById('total-price').innerText = `R$ ${total.toFixed(2)}`;
+            document.getElementById('total-price').innerText = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             const split = total / 6; // Divisão por 6 pessoas
-            document.getElementById('split-price').innerText = split.toFixed(2);
+            document.getElementById('split-price').innerText = split.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
         }
 
         // --- NOVAS FUNÇÕES DE AÇÃO ---
@@ -756,14 +1564,14 @@ const initialShoppingItems = [
         function addNewItem() {
             const input = document.getElementById('new-item-input');
             const text = input.value.trim();
-            
+
             if (text) {
                 // Adiciona ao início da lista
-                localShoppingList.unshift({ 
+                localShoppingList.unshift({
                     id: Date.now(), // ID único
-                    name: text, 
-                    price: 0, 
-                    checked: false 
+                    name: text,
+                    price: 0,
+                    checked: false
                 });
                 input.value = ''; // Limpa o campo
                 syncData(); // Salva e atualiza
@@ -772,7 +1580,7 @@ const initialShoppingItems = [
 
         function deleteItem(index) {
             // Remove o item da lista
-            if(confirm('Tem certeza que quer remover este item?')) {
+            if (confirm('Tem certeza que quer remover este item?')) {
                 localShoppingList.splice(index, 1);
                 syncData();
             }
@@ -789,7 +1597,9 @@ const initialShoppingItems = [
         }
 
         function updatePrice(index, value) {
-            localShoppingList[index].price = parseFloat(value) || 0;
+            // Converte "1.000,50" -> 1000.50
+            let cleanValue = value.replace(/[^\d,]/g, '').replace(',', '.');
+            localShoppingList[index].price = parseFloat(cleanValue) || 0;
             syncData();
         }
 
@@ -797,18 +1607,19 @@ const initialShoppingItems = [
         function switchTab(tab) {
             document.querySelectorAll('.dock-item').forEach(i => i.classList.remove('active'));
             event.currentTarget.classList.add('active');
-            
+
             const tabs = ['timeline', 'people', 'summary', 'menu', 'shopping', 'packing'];
             tabs.forEach(t => {
                 const el = document.getElementById('view-' + t);
-                if(t === tab) el.classList.remove('hidden');
+                if (t === tab) el.classList.remove('hidden');
                 else el.classList.add('hidden');
             });
 
-            if(tab === 'timeline') setTimeout(() => map.invalidateSize(), 100);
+            if (tab === 'timeline') setTimeout(() => map.invalidateSize(), 100);
         }
 
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
+
 </html>
